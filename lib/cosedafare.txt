@@ -1,0 +1,24 @@
+- isalpha	ok
+• isdigit	ok
+• isalnum	ok
+• isascii	ok
+• isprint	ok
+• strlen	ok
+• memset	ok
+• bzero		--
+• memcpy	--
+• memmove	--
+• strlcpy	ok
+• strlcat	ok
+• toupper	ok
+• tolower	ok
+• strchr	--
+• strrchr	--
+• strncmp	--
+• memchr	--
+• memcmp	--
+• strnstr	--
+• atoi		--
+To implement the two following functions, you will use malloc():
+• calloc 	--
+• strdup	--

@@ -1,0 +1,34 @@
+# -*- Makefile -*-
+
+#Compiler flags
+CC = gcc
+CFLAGS = -Wall -Wextra -Werror 
+RM = rm -f
+
+NAME = rush-02
+
+#source and obj files
+SRC = rush-02.c functions.c
+
+#converting all sourcefiles from .c to .o
+OBJ = $(SRC:.c=.o)
+
+all: $(NAME)
+
+$(NAME): $(OBJ)
+	$(CC) $(CFLAGS) $(OBJ) -o $(NAME)
+
+%.o: %.c
+	$(CC) $(CFLAGS) $(SRC) -c .o
+
+clean:
+	$(RM) $(OBJ)
+
+fclean:
+	$(RM) $(NAME)
+
+re:
+	fclean all
+
+.PHONY
+	all clean fclean re
