@@ -9,7 +9,7 @@
 /*   Updated: 2025/11/25 16:31:39 by ggaritta         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-
+//qwertyui
 #include "libft.h"
 
 void ft_bzero (void *s, size_t n)
