@@ -1,0 +1,474 @@
+How to Approach Writing Your Own printf
+1. Define the Scope
+
+Before touching code, decide what features your printf must support:
+
+Which format specifiers? (%c, %s, %d, %i, %u, %x, %X, %p, %f, etc.)
+
+Will you handle flags? (-, +, 0, , #)
+
+Field width?
+
+Precision?
+
+Length modifiers? (hh, h, l, ll)
+
+If you're doing this for a school project (like “libftprintf”), start with the required subset.
+
+2. Understand va_list Mechanics
+
+A custom printf requires reading a variable number of arguments.
+
+You must understand:
+
+va_list
+
+va_start
+
+va_arg
+
+va_end
+
+Your function prototype will look like:
+
+int ft_printf(const char *fmt, ...);
+
+3. Write a Core Loop to Parse the Format String
+
+Your ft_printf should:
+
+Loop through the format string character by character.
+
+When encountering a normal character → print it immediately.
+
+When encountering % → switch into “parsing mode”.
+
+Pseudo-structure:
+
+int ft_printf(const char *fmt, ...)
+{
+    va_list ap;
+    int count = 0;
+    va_start(ap, fmt);
+
+    while (*fmt)
+    {
+        if (*fmt != '%')
+            write(1, fmt, 1), count++;
+        else
+            parse_specifier(&fmt, ap, &count);
+        fmt++;
+    }
+    va_end(ap);
+    return count;
+}
+
+4. Implement a Format-Specifier Parser
+
+This step turns the part after % into structured data:
+
+%[flags][width][precision][length][specifier]
+
+
+Create a struct:
+
+typedef struct s_fmt {
+    int     flag_minus;
+    int     flag_zero;
+    int     width;
+    int     precision;
+    int     precision_set;
+    char    length;
+    char    specifier;
+} t_fmt;
+
+
+Your parse_specifier() function should:
+
+Initialize this struct
+
+Read characters while they belong to flags
+
+Parse width (numbers)
+
+Parse precision if . encountered
+
+Parse length modifiers
+
+Finally store the specifier: cspdiuxX%
+
+5. Dispatch Work to Handler Functions
+
+Each specifier should have its own handler:
+
+void handle_char(t_fmt *fmt, va_list ap, int *count);
+void handle_string(t_fmt *fmt, va_list ap, int *count);
+void handle_int(t_fmt *fmt, va_list ap, int *count);
+void handle_hex(t_fmt *fmt, va_list ap, int *count);
+...
+
+
+A simple dispatcher:
+
+if (fmt->specifier == 'd' || fmt->specifier == 'i')
+    handle_int(fmt, ap, count);
+else if (fmt->specifier == 's')
+    handle_string(fmt, ap, count);
+...
+
+6. Implement Conversions + Formatting
+
+Each handler must:
+
+Extract the correct type via va_arg
+
+Convert the value to a string (write your own helpers)
+
+itoa for integers
+
+hex converter for %x/%X
+
+pointer formatter for %p
+
+Apply formatting:
+
+Left/right padding
+
+Zero padding
+
+Precision handling
+
+Sign handling (+, space)
+
+Alternate form (#)
+
+This is the most tedious part and where almost all bugs arise.
+
+7. Create a Robust Set of Utility Functions
+
+You'll need:
+
+String length calculation
+
+Memory-safe string joining
+
+Character / string output wrappers that update count
+
+Integer → string converters:
+
+signed decimal
+
+unsigned decimal
+
+hex (lower/upper)
+
+pointer
+
+Make them small and modular.
+
+8. Test Incrementally
+
+Do not attempt everything at once. Build in layers:
+
+Stage 1: Basic engine
+
+Print normal characters
+
+Handle %c, %s, %d
+
+Stage 2: Padding and width
+
+Implement width handling
+
+Add - and 0 flags
+
+Stage 3: Precision and edge cases
+
+Strings with precision
+
+Integers with precision
+
+Stage 4: Extra specifiers
+
+%u, %x, %X, %p, %%
+
+Stage 5: Stress test
+
+Test with:
+
+Long width
+
+Negative numbers
+
+Zero precision
+
+Null pointers
+
+Very long strings
+
+Mixed format specifiers
+
+Compare outputs to the real printf character-by-character.
+
+Summary (Short Version)
+
+Decide what features you will support.
+
+Learn how va_list works.
+
+Write the main loop that detects %.
+
+Parse the format specifier into a struct.
+
+Dispatch to handler functions.
+
+Convert values to strings and apply flags/width/precision.
+
+Build and reuse small utility functions.
+
+Test progressively.
+
+If you want, I can give you:
+
+A minimal skeleton to start coding
+
+A complete directory structure
+
+A working parser design
+
+Example implementations for each handler
+
+A checklist of all edge cases to test
+
+Just tell me.
+
+You said:
+give me a checklist of edge cases to test thanks
+ChatGPT said:
+
+Here is a disciplined, comprehensive checklist of edge cases to test for a custom printf implementation. This list is organized by specifier and by formatting feature so you can verify correctness systematically.
+
+Global Behavior
+
+Return value equals number of characters printed.
+
+No segmentation fault on invalid or incomplete formats (e.g., lone % at the end).
+
+Proper handling of NULL pointers.
+
+All writes go through your own output routines (no printf leakage).
+
+Behavior identical to standard printf for all included features.
+
+Specifier-by-Specifier Edge Cases
+1. %c
+
+Print normal ASCII characters.
+
+Print non-printable characters.
+
+Print '\0' (null byte).
+
+Must count toward return value.
+
+Must write the null byte to stdout.
+
+2. %s
+
+NULL string: should print (null) unless project specifies otherwise.
+
+Empty string "".
+
+Very long strings (stress test).
+
+Precision smaller than string length.
+
+Precision greater than string length.
+
+Width < string length.
+
+Width > string length.
+
+Width + precision combined.
+
+3. %d / %i
+
+0 (critical case).
+
+Positive numbers.
+
+Negative numbers.
+
+Largest and smallest ints: INT_MAX, INT_MIN.
+
+Precision = 0 with input 0 → print nothing.
+
+Precision > number length.
+
+Width > number length.
+
+Width < number length.
+
+Combination of width + precision (especially with zeros).
+
++ flag with positive number.
+
+Space flag with positive number.
+
+Zero flag with width and a negative number.
+
+Zero flag ignored when precision is set.
+
+4. %u
+
+0.
+
+Maximum unsigned UINT_MAX.
+
+Precision = 0 with input 0.
+
+Same width/precision tests as %d.
+
+5. %x / %X
+
+Lowercase vs uppercase correctness.
+
+0.
+
+Large values.
+
+# flag with nonzero value (0x / 0X).
+
+# flag with zero value (no prefix).
+
+Precision = 0 with input 0 → prints nothing.
+
+Width + precision interactions.
+
+Zero flag + width (and suppressed when precision is set).
+
+6. %p
+
+NULL pointer (usually prints 0x0).
+
+Large pointer values.
+
+Exact formatting with lowercase hex.
+
+Ensure prefix 0x always appears.
+
+Width applied correctly.
+
+No need for precision unless your spec requires it.
+
+7. %%
+
+Ensure it prints a single %.
+
+Width handling if implemented.
+
+Zero flag padding.
+
+Flag Behavioral Edge Cases
+Minus -
+
+Overrides zero padding.
+
+Left align with width.
+
+Works correctly with %s, %d, %x, etc.
+
+Zero 0
+
+Works only when precision not set.
+
+With negative numbers, zeros must follow the sign.
+
+Not applied to %s.
+
+Plus +
+
+Only valid for signed conversions (%d, %i).
+
+Should override space flag.
+
+Space
+
+Only for signed numeric types.
+
+Ignored if + present.
+
+Hash #
+
+For %x/%X:
+
+Adds prefix only if value ≠ 0.
+For %o if implemented:
+
+Precision + hash interactions.
+
+Width and Precision Edge Cases
+Width
+
+Zero width.
+
+Width smaller than output.
+
+Width larger than output.
+
+Width supplied as * (if implemented), including negative values → left align.
+
+Precision
+
+Precision = 0 with:
+
+Integers: suppress output when value is 0.
+
+Strings: truncate.
+
+Precision > actual length.
+
+Precision + zero flag interactions.
+
+Length Modifiers (if you support them)
+%hd, %hhd, %ld, %lld
+
+Values at boundary of each type.
+
+Correct casting and sign extension.
+
+%hx, %hhx, %lx, %llx
+
+Large unsigned conversions.
+
+Proper masking.
+
+Format String Parsing Edge Cases
+
+Multiple sequential flags.
+
+Flags in unusual order (should still work).
+
+Width without precision.
+
+Precision without width.
+
+Format like "%-05d" (minus cancels zero).
+
+Format ending in %.
+
+Format containing %%%d.
+
+Stress Tests
+
+Extremely long format string.
+
+Thousands of conversions in one call.
+
+Intermixed specifiers: "a%5d%-10stest%x%c...".
+
+Randomized test generator (if you want to be thorough).
+
+Compare output byte-for-byte against libc printf.
+
+If you want, I can produce a ready-made test file that includes all these cases and can be compiled to verify your implementation.
