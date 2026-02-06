@@ -1,0 +1,209 @@
+1️⃣ Understand exactly what fgets / get_next_line must do
+
+At a conceptual level, your function must:
+
+Read from a file descriptor
+
+Return one line at a time
+
+Stop at \n or EOF
+
+Remember leftover data between calls
+
+Work even if:
+
+Lines are longer than your buffer
+
+read() returns partial data
+
+Multiple calls are made in a row
+
+This “remembering” part is the heart of the project.
+
+2️⃣ You must understand read() deeply
+
+If you don’t fully understand read(), stop and do that first.
+
+You need to know:
+
+read(fd, buf, BUFFER_SIZE) can return:
+
+> 0 → bytes read
+
+0 → EOF
+
+-1 → error
+
+It does not null-terminate
+
+It can return less than BUFFER_SIZE
+
+It can return data without a newline
+
+🔥 Biggest mistake: assuming read() behaves nicely.
+
+3️⃣ Static variables (this is non-negotiable)
+
+You must understand:
+
+static char *stash;
+
+
+It keeps data between function calls
+
+Lives for the entire program runtime
+
+Must be manually freed at the right time
+
+If you don’t manage the stash correctly:
+
+Memory leaks
+
+Segfaults
+
+Wrong output
+
+4️⃣ Memory management will make or break you
+
+You need to be solid with:
+
+malloc, free
+
+Avoiding:
+
+Double free
+
+Use-after-free
+
+Leaks
+
+Realloc logic (usually manual via malloc + memcpy)
+
+Expect to:
+
+Join strings
+
+Extract substrings
+
+Keep leftovers
+
+💡 Tip: every allocation must have one clear owner.
+
+5️⃣ String handling (without cheating)
+
+You’ll likely re-implement helpers:
+
+ft_strlen
+
+ft_strchr
+
+ft_strjoin
+
+ft_substr
+
+Make sure:
+
+They handle NULL
+
+They don’t overread
+
+They allocate correctly
+
+Bad helper functions = impossible debugging later.
+
+6️⃣ Know the edge cases BEFORE coding
+
+Write these down now:
+
+Empty file
+
+File without trailing \n
+
+File with only \n
+
+Very long line
+
+BUFFER_SIZE = 1
+
+Multiple calls after EOF
+
+Invalid file descriptor
+
+If you don’t think about these early, your logic will fight you.
+
+7️⃣ Define your algorithm first (don’t freestyle)
+
+A solid high-level plan looks like this:
+
+If stash contains \n
+
+Extract line
+
+Update stash
+
+Return line
+
+Else
+
+Read into buffer
+
+Append to stash
+
+Repeat
+
+If EOF
+
+Return remaining stash (if any)
+
+Clean up
+
+Do not code before this logic is crystal clear.
+
+8️⃣ Decide early: single FD or multiple FDs
+
+Some versions require handling multiple file descriptors.
+
+That changes everything:
+
+static char *stash ❌
+
+static char *stash[FD_MAX] ✅
+
+Know which one you’re implementing.
+
+9️⃣ Debug like a pro
+
+Before coding, prepare to use:
+
+printf strategically
+
+valgrind
+
+Manual test files
+
+Step-by-step tracing
+
+You will have bugs. That’s expected.
+
+10️⃣ What NOT to do
+
+❌ Don’t assume newline comes in one read
+❌ Don’t free stash too early
+❌ Don’t return pointers to freed memory
+❌ Don’t ignore EOF behavior
+
+Minimal mental checklist before you start
+
+You’re ready if you can answer yes to all of these:
+
+Do I know how read() behaves?
+
+Do I know how static variables work?
+
+Can I manage heap memory confidently?
+
+Do I know all required edge cases?
+
+Do I have a clear algorithm?
+
+If any answer is “ehhh” — pause and fix that first.

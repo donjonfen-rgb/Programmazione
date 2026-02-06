@@ -1,0 +1,664 @@
+first talk
+----------
+Short answer: a lot of things 😅 — but they’re all classic GNL pitfalls. Let’s go step by step and I’ll be very explicit.
+
+🚨 The BIGGEST bug (crash guaranteed)
+bufferone = NULL;
+redby = read(fd, bufferone, BUFFER_SIZE);
+
+
+You’re calling read() into a NULL pointer.
+
+👉 read() needs allocated memory to write into.
+
+✅ Fix
+bufferone = malloc(BUFFER_SIZE + 1);
+if (!bufferone)
+    return NULL;
+
+redby = read(fd, bufferone, BUFFER_SIZE);
+bufferone[redby] = '\0';
+
+
+Without this, segfault 100%.
+
+❌ Wrong fd / BUFFER_SIZE check
+if (!(fd > 0 || BUFFER_SIZE > 0))
+    return (NULL);
+
+
+Logic is wrong and fd 0 is valid (stdin).
+
+✅ Correct check
+if (fd < 0 || BUFFER_SIZE <= 0)
+    return NULL;
+
+❌ Using bufferone when it’s NULL
+if (!bufferone && (bufferone[0] == '\0'))
+
+
+If bufferone == NULL, then bufferone[0] → 💥
+
+✅ Should be
+if (bufferone && bufferone[0] == '\0')
+
+❌ Freeing NULL after setting it to NULL (useless)
+bufferone = NULL;
+free(bufferone);
+
+
+Freeing NULL does nothing.
+Also: you’re losing the pointer before freeing real memory.
+
+✅ Correct pattern
+free(bufferone);
+bufferone = NULL;
+
+❌ Double allocation leak
+rigapronta = ft_callocami(segnalibro + 1, sizeof(char));
+rigapronta = ft_substringami(bufferone,
+    ft_strlengmi(bufferone), segnalibro);
+
+
+You allocate memory…
+then immediately overwrite the pointer → memory leak.
+
+✅ Choose ONE
+
+Either:
+
+rigapronta = ft_substringami(...);
+
+
+OR copy into the allocated buffer.
+
+❌ Wrong ft_substringami arguments (very likely)
+ft_substringami(bufferone,
+    ft_strlengmi(bufferone), segnalibro);
+
+
+If this is like substr(s, start, len):
+
+start = ft_strlengmi(bufferone) → end of string 🤨
+
+Probably you want:
+
+ft_substringami(bufferone, 0, segnalibro);
+
+❌ segnalibro logic unclear
+segnalibro = ft_strchrcami(bufferone);
+if (segnalibro)
+
+
+If newline is at index 0, this fails.
+
+✅ Better
+if (segnalibro >= 0)
+
+❌ Returning owned memory without cleanup
+else
+    return (bufferone);
+
+
+Now the caller owns bufferone, but sometimes you return
+rigapronta, sometimes bufferone. That’s API chaos.
+
+👉 get_next_line should always return a freshly allocated line
+and never expose internal buffers.
+
+❌ Missing static buffer (core GNL concept)
+
+get_next_line must keep leftovers between calls:
+
+static char *stash;
+
+
+Without it:
+
+no multi-read lines
+
+no partial line handling
+
+no real GNL behavior
+
+🧠 TL;DR — main problems
+Problem	Result
+read() into NULL	💥 segfault
+Bad fd check	Undefined behavior
+NULL dereference	💥 segfault
+Memory leaks	Valgrind screams
+No static buffer	Not GNL
+Inconsistent returns	Broken API
+💡 If you want
+
+I can:
+
+rewrite this into a clean, correct GNL skeleton
+
+help you design stash logic
+
+or walk through it line by line like a debugger
+
+Just tell me 👇
+
+if (fd < 0 || BUFFER_SIZE <= 0)
+    return NULL; 
+why is this better than what i wrote
+
+Great question — this is exactly the kind of detail that separates “it kinda works” from “this is solid C”.
+
+Let’s put them side by side.
+
+What you wrote
+if (!(fd > 0 || BUFFER_SIZE > 0))
+    return (NULL);
+
+The correct version
+if (fd < 0 || BUFFER_SIZE <= 0)
+    return NULL;
+
+1️⃣ Logic clarity (this is the big one)
+
+Your condition is a double negative with an OR:
+
+!(A || B)
+
+
+Which by De Morgan’s law means:
+
+(!A && !B)
+
+
+So your code is actually equivalent to:
+
+if (fd <= 0 && BUFFER_SIZE <= 0)
+    return NULL;
+
+❌ That means:
+
+The function only returns NULL if both are invalid
+
+If either one is invalid → the function continues 😬
+
+Example:
+
+fd = -1
+BUFFER_SIZE = 42
+
+
+Your check:
+
+fd > 0 || BUFFER_SIZE > 0   // false || true → true
+!(true) → false → function continues 💥
+
+
+➡️ read(-1, ...) = undefined behavior
+
+2️⃣ Correct logic: fail fast on any invalid input
+
+This is what we actually want:
+
+“If fd is invalid OR BUFFER_SIZE is invalid → stop”
+
+That maps directly to:
+
+if (fd < 0 || BUFFER_SIZE <= 0)
+
+
+Readable, explicit, zero mental gymnastics.
+
+3️⃣ fd > 0 is wrong (subtle but important)
+
+You wrote:
+
+fd > 0
+
+
+But:
+
+fd	Meaning
+0	valid (stdin)
+1	stdout
+2	stderr
+
+So your code rejects stdin for no reason.
+
+Correct check:
+
+fd < 0   // only invalid case
+
+4️⃣ Defensive programming style (why teachers expect it)
+
+This pattern:
+
+if (bad)
+    return NULL;
+
+
+is:
+
+idiomatic C
+
+easier to read
+
+easier to maintain
+
+impossible to misinterpret
+
+Your version forces the reader to:
+
+negate
+
+apply De Morgan
+
+reason about truth tables
+
+That’s cognitive tax for no benefit.
+
+🧠 Mental rule to remember
+
+Reject invalid states, don’t try to accept valid ones
+
+Bad:
+
+if (!(good1 || good2))
+
+
+Good:
+
+if (bad1 || bad2)
+
+
+If you want, next I can:
+
+draw the truth table
+
+refactor your whole function with clean guard clauses
+
+or help you spot these bugs automatically when reading C code
+
+You’re asking the right questions — this is how you level up fast 💪
+
+why is this correct 
+free(bufferone);
+bufferone = NULL;
+
+Short answer: because order matters, and pointers are just addresses.
+Long answer below 👇
+
+What free() actually does (important mental model)
+free(bufferone);
+
+
+Frees the memory block that bufferone points to
+
+Does NOT change the value of bufferone
+
+After this line, bufferone is a dangling pointer
+
+Example:
+
+bufferone = 0x55555576a2a0;   // before free
+free(bufferone);
+// bufferone is STILL 0x55555576a2a0
+
+
+That address is now invalid memory.
+
+Why this is dangerous
+
+After free(bufferone):
+
+bufferone[0] = 'a';   // ❌ use-after-free
+free(bufferone);      // ❌ double free
+
+
+Both are undefined behavior (Valgrind nightmares).
+
+Why this pattern is correct
+free(bufferone);
+bufferone = NULL;
+
+Step-by-step:
+
+free(bufferone);
+→ releases the allocated memory correctly
+
+bufferone = NULL;
+→ removes the dangling address
+
+Now:
+
+if (bufferone)        // safe check
+    free(bufferone); // safe, free(NULL) is legal
+
+Why the reverse order is WRONG
+bufferone = NULL;
+free(bufferone);
+
+
+You just did:
+
+Lost the original address
+
+Freed nothing
+
+Leaked memory 💀
+
+Because:
+
+free(NULL);  // does nothing
+
+The golden rule (burn this into your brain)
+
+Free first, NULL second
+
+Always.
+
+Why people do this in real code
+
+This makes code:
+
+safer against double-free
+
+safer against accidental use
+
+easier to reason about in complex flows (like GNL)
+
+Especially in functions with multiple exit paths.
+
+Extra pro tip (very relevant for GNL)
+
+If a pointer’s lifetime ends in a function, NULL it only if the pointer continues to exist.
+
+Example:
+
+char *buf = malloc(100);
+free(buf);
+buf = NULL;   // useful
+
+
+But if the variable is about to go out of scope:
+
+free(buf);    // enough
+
+
+NULLing is defensive, not magic.
+
+One-line summary
+free(ptr);      // frees memory
+ptr = NULL;     // kills the dangling pointer
+
+
+You’re asking exactly the questions that show you’re starting to think like C.
+Want to talk next about why free(NULL) is allowed or how double-free happens in GNL?
+---------------------------------------------------------
+
+
+
+seconda
+-----------------------------------------------------------
+Ok, buckle up 🙂 — there are many concrete problems here, and most of them are logic + pointer misuse, not “small syntax stuff”. I’ll be very clear and systematic.
+
+I’ll group issues by function, then explain why your GNL can’t work as written.
+
+🔴 1. ft_strlengmi — VERY BROKEN
+size_t	ft_strlengmi(char *lookintome)
+{
+	int	i;
+
+	i = 0;
+	if (*lookintome)
+	{
+		while(*lookintome != '\n')
+		{
+			(*lookintome)++;
+			i++;
+		}
+	}
+	return (i);
+}
+
+❌ Problems
+
+You modify the pointer itself
+
+(*lookintome)++;
+
+
+This increments the character, not the pointer.
+You want:
+
+lookintome++;
+
+
+Stops at \n, not \0
+This is not strlen.
+If the string has no \n, you walk into undefined memory.
+
+No NULL check
+If lookintome == NULL → segfault.
+
+✅ Correct idea
+size_t ft_strlengmi(char *s)
+{
+    size_t i = 0;
+    if (!s)
+        return 0;
+    while (s[i])
+        i++;
+    return i;
+}
+
+🔴 2. ft_strjoinami — returns the wrong pointer
+while (*buffo)
+    *joinedstr++ = *buffo++;
+
+puntame = joinedstr;
+
+while (*residuo)
+    *joinedstr++ = *residuo++;
+
+return (joinedstr);
+
+❌ Problems
+
+You increment joinedstr, then return the end of the string, not the start.
+
+puntame is unused.
+
+If you return joinedstr, caller receives a pointer to '\0'.
+
+✅ Fix
+char *start = joinedstr;
+/* copy buffo */
+/* copy residuo */
+return start;
+
+🔴 3. ft_callocami — pointless + wrong free
+alloc = malloc(emmn * ueit);
+if (!alloc)
+{
+    free(alloc);
+    return (NULL);
+}
+
+❌ Problems
+
+free(NULL) is useless.
+
+You already know alloc == NULL.
+
+⚠️ Minor issue
+
+Your zeroing loop is fine, but confusing.
+
+✅ Fix
+if (!alloc)
+    return NULL;
+
+🔴 4. ft_strchrcami — misleading logic
+while(str[cf] && str[cf] != '\n')
+    cf++;
+
+❌ Problems
+
+You return index of \n, not a boolean.
+
+If no \n, you return length → treated as “true”.
+
+✅ What GNL needs
+
+You usually want:
+
+find newline
+
+or return -1 if not found
+
+🔴 5. ft_substringami — depends on broken strlen
+if (start >= ft_strlengmi(s))
+    return (ft_callocami(1,1));
+
+❌ Problems
+
+ft_strlengmi is broken → everything here is broken.
+
+You recalculate strlen 3 times (inefficient).
+
+🔴 6. get_next_line — fundamentally incorrect design
+
+This is the big one.
+
+❌ Major conceptual errors
+1️⃣ Static buffer is reallocated every call
+static char *bufferone;
+bufferone = ft_callocami(...)
+
+
+➡️ This kills the whole point of static
+You lose leftover data every call.
+
+2️⃣ BUFFER_SIZE allocation is wrong
+ft_callocami(BUFFER_SIZE + 1, sizeof(bufferone))
+
+
+sizeof(bufferone) = 8 bytes, not sizeof(char).
+
+You allocated:
+
+(BUFFER_SIZE + 1) * 8
+
+3️⃣ Invalid fd check
+if (!(fd > 0 || BUFFER_SIZE > 0))
+
+
+This passes when:
+
+fd = -1 but BUFFER_SIZE > 0
+
+Correct is:
+
+if (fd < 0 || BUFFER_SIZE <= 0)
+    return NULL;
+
+4️⃣ This condition is impossible
+if (!bufferone && (bufferone[0] == '\0'))
+
+
+If !bufferone, you cannot access bufferone[0] → UB.
+
+5️⃣ You never:
+
+append reads together
+
+store leftover after \n
+
+loop on read()
+
+🚨 This means:
+
+Your function can never return a full line unless it fits in one read and contains \n.
+
+🔴 7. Memory leaks everywhere
+
+Examples:
+
+bufferone overwritten without free
+
+rigapronta allocated but not always freed
+
+returning pointers you no longer own
+
+Valgrind will scream.
+
+🔴 8. main issues
+int fd = open(fileName, O_RDWR);
+
+
+GNL should use O_RDONLY
+
+You never free(content)
+
+You never call GNL in a loop
+
+✅ Final verdict
+
+Your code has three levels of problems:
+
+🔥 Critical (must fix first)
+
+Pointer arithmetic errors
+
+Returning wrong pointers
+
+Broken strlen
+
+Static buffer misuse
+
+⚠️ Structural
+
+No read loop
+
+No leftover handling
+
+Wrong newline detection
+
+🧹 Cleanup
+
+Useless frees
+
+Memory leaks
+
+Wrong allocations
+
+💡 Recommendation (important)
+
+👉 Stop debugging this version
+You are stacking bugs on top of bugs.
+
+Instead:
+
+Fix libft-style helpers first (strlen, strjoin, substr)
+
+Then implement GNL in this order:
+
+static stash
+
+read loop
+
+join stash + buffer
+
+extract line
+
+update stash
+
+If you want, next step I can:
+
+🔧 Rewrite one function at a time with explanations
+
+🧠 Show a minimal correct GNL skeleton
+
+🧪 Help you test with Valgrind properly
+
+Just tell me how you want to proceed.
+-----------------------------------------------------------

@@ -1,0 +1,66 @@
+ggaritta@c1r3p8:~/42/CC/casa-lavoro/Programmazione$ ls
+libft_me42  printf_me
+ggaritta@c1r3p8:~/42/CC/casa-lavoro/Programmazione$ git-handler 
+Enter branch name (without 'feature/'): gnl
+Switched to a new branch 'feature/gnl'
+Started from 'main'. Switched to 'feature/gnl'. No commit or push performed.
+ggaritta@c1r3p8:~/42/CC/casa-lavoro/Programmazione$ mkdir gnl_me
+ggaritta@c1r3p8:~/42/CC/casa-lavoro/Programmazione$ git-handler
+Commit message: Va finito
+[feature/gnl 0839743] Va finito
+ Committer: Giorgio Garitta <ggaritta@c1r3p8.42firenze.it>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly:
+
+    git config --global user.name "Your Name"
+    git config --global user.email you@example.com
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 3 files changed, 234 insertions(+)
+ create mode 100644 gnl_me/get_next_line.c
+ create mode 100644 gnl_me/get_next_line.h
+ create mode 100644 gnl_me/get_next_line_utils.c
+Enumerating objects: 7, done.
+Counting objects: 100% (7/7), done.
+Delta compression using up to 16 threads
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 2.46 KiB | 1.23 MiB/s, done.
+Total 6 (delta 0), reused 0 (delta 0), pack-reused 0
+remote: 
+remote: Create a pull request for 'feature/gnl' on GitHub by visiting:
+remote:      https://github.com/donjonfen-rgb/Programmazione/pull/new/feature/gnl
+remote: 
+To github.com:donjonfen-rgb/Programmazione.git
+ * [new branch]      feature/gnl -> feature/gnl
+Branch 'feature/gnl' set up to track remote branch 'feature/gnl' from 'origin'.
+Done: feature/gnl pushed to origin.
+ggaritta@c1r3p8:~/42/CC/casa-lavoro/Programmazione$ git status
+On branch feature/gnl
+Your branch is up to date with 'origin/feature/gnl'.
+
+nothing to commit, working tree clean
+ggaritta@c1r3p8:~/42/CC/casa-lavoro/Programmazione$ git switch main
+Switched to branch 'main'
+Your branch is up to date with 'origin/main'.
+ggaritta@c1r3p8:~/42/CC/casa-lavoro/Programmazione$ git pull
+remote: Enumerating objects: 1, done.
+remote: Counting objects: 100% (1/1), done.
+remote: Total 1 (delta 0), reused 0 (delta 0), pack-reused 0 (from 0)
+Unpacking objects: 100% (1/1), 891 bytes | 891.00 KiB/s, done.
+From github.com:donjonfen-rgb/Programmazione
+   b104d56..dbaa1f7  main       -> origin/main
+Updating b104d56..dbaa1f7
+Fast-forward
+ gnl_me/get_next_line.c       | 102 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ gnl_me/get_next_line.h       |  32 +++++++++++++++++++++
+ gnl_me/get_next_line_utils.c | 100 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 234 insertions(+)
+ create mode 100644 gnl_me/get_next_line.c
+ create mode 100644 gnl_me/get_next_line.h
+ create mode 100644 gnl_me/get_next_line_utils.c
+ggaritta@c1r3p8:~/42/CC/casa-lavoro/Programmazione$ 
+

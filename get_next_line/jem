@@ -1,0 +1,96 @@
+. The Logic Loop in ft_reed
+This is currently the biggest hurdle. There are three main issues here:
+
+Infinite Loop / Segfault: Your condition while (!(ft_strchr(rl, '\n')) || redby != 0) 
+is dangerous. If redby is not 0, it keeps looping even if a newline is found. 
+Also, you pass rl to ft_strchr before rl is even allocated or filled.
+
+The ft_join Leak: Inside the loop, you call ft_join(ss, rl). Your ft_join frees 
+ss, which is good, but then you free(rl) right after. If rl contained the data 
+you just joined into ss, you're okay, but you are re-allocating rl every single loop.
+
+The Buffer: You should read into a fixed-size buffer and join it to your 
+static variable ss.
+
+2. The ft_join Function
+The ss check: If ss is NULL (which happens the very first time you call it), 
+ft_strleng(ss) will safely return 0 because of your protection, but while 
+(ss[++i]) will crash because you can't iterate on a NULL pointer.
+
+Logic: Ensure you handle the case where ss is NULL by treating it as an empty string "".
+
+3. Pointer Re-assignment in ft_row
+In C, when you pass a pointer to a function (like ss into ft_row), the function 
+gets a copy of that pointer.
+
+The Issue: Inside ft_row, you do ss = swap;. This only changes the local version 
+of ss. The static variable ss back in get_next_line stays pointing to the memory 
+you just freed (free(ss)).
+
+The Fix: ft_row should only return the line found. You need a separate function 
+(usually called ft_save_rest) to update the static variable to contain whatever is left after the \n.
+
+Suggested Corrections
+Here is how to structure the logic more effectively:
+
+Revised ft_join
+C
+char *ft_join(char *ss, char *sl)
+{
+    char *r;
+    size_t i = 0;
+    size_t j = 0;
+
+    if (!ss) // Handle first call
+        ss = ft_calloc(1, sizeof(char));
+    if (!ss || !sl)
+        return (NULL);
+    r = ft_calloc(ft_strleng(ss) + ft_strleng(sl) + 1, sizeof(char));
+    if (!r)
+        return (free(ss), NULL);
+    while (ss[i])
+    {
+        r[i] = ss[i];
+        i++;
+    }
+    while (sl[j])
+        r[i + j] = sl[j++];
+    free(ss); // Free the old static storage
+    return (r);
+}
+Revised ft_reed
+Instead of calling ft_row inside ft_reed, use the loop only to collect data 
+until a \n is found.
+
+C
+char *ft_reed(char *ss, int fd)
+{
+    char *rl;
+    ssize_t redby;
+
+    rl = malloc(sizeof(char) * (BUFFER_SIZE + 1));
+    if (!rl) return (NULL);
+    redby = 1;
+    // Loop until read fails, EOF (0), or newline is found in ss
+    while (redby > 0 && ft_strchr(ss, '\n') == -1) 
+    {
+        redby = read(fd, rl, BUFFER_SIZE);
+        if (redby == -1)
+            return (free(rl), free(ss), NULL);
+        rl[redby] = '\0'; // Null-terminate the buffer
+        ss = ft_join(ss, rl);
+    }
+    free(rl);
+    return (ss);
+}
+Summary of what's missing:
+The "Rest": After you extract the line to return to the user, you need to 
+save the characters after the \n back into your static variable.
+
+ft_strchr Logic: Your ft_strchr returns ++i. This means if it finds the char 
+at index 0, it returns 1. This is fine, but standard C strchr usually returns 
+a pointer. Just ensure your while loops in other functions account for your 
+specific return values.
+
+Would you like me to help you write the function that saves the "leftover" 
+string for the next call?

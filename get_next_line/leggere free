@@ -1,0 +1,408 @@
+What free() does in C
+
+free() returns dynamically allocated memory to the allocator (the heap manager).
+Formally, it:
+
+Takes a pointer previously returned by malloc, calloc, or realloc
+
+Marks that memory block as available for reuse
+
+Does not:
+
+Set the pointer to NULL
+
+Erase the contents
+
+Change the pointer variable itself
+
+After free(p), the value of p is indeterminate (a dangling pointer).
+
+“Should I set it to NULL before freeing it?”
+
+No. That is incorrect and useless.
+
+p = NULL;
+free(p);   // does nothing
+
+
+You just leaked memory. You lost the only reference to the allocated block.
+
+Correct order:
+
+free(p);
+p = NULL;
+
+
+Why?
+
+free() needs the original address
+
+Setting to NULL afterward prevents accidental reuse
+
+“Should I check if it’s NULL before calling free()?”
+
+You do not have to.
+
+The C standard guarantees:
+
+free(NULL);   // safe, does nothing
+
+
+Therefore:
+
+if (p != NULL)
+    free(p);
+
+
+is redundant and usually discouraged unless it improves readability.
+
+What happens if I free a NULL pointer?
+
+Nothing. No-op. Defined behavior. Safe.
+
+What happens if I free an invalid pointer?
+
+Undefined behavior. This includes:
+
+Double free
+
+Freeing stack memory
+
+Freeing memory not returned by malloc-family
+
+Freeing a pointer already freed (unless it was set to NULL)
+
+Best practices for using free() (step-by-step)
+1. Only free what you allocated
+int *p = malloc(sizeof *p);
+free(p);      // OK
+
+
+Never free:
+
+Stack variables
+
+String literals
+
+Pointer arithmetic offsets
+
+int x;
+free(&x);     // UB
+
+char *s = "hello";
+free(s);      // UB
+
+2. Free exactly once
+free(p);
+free(p);      // UB (double free)
+
+
+Rule: One allocation → one free.
+
+3. Immediately null the pointer after freeing (when it remains in scope)
+free(p);
+p = NULL;
+
+
+Why:
+
+Prevents accidental reuse
+
+Makes double-free safe
+
+Makes checks trivial
+
+This is not required, but strongly recommended in non-trivial code.
+
+4. Do not use memory after freeing it
+free(p);
+*p = 10;      // UB (use-after-free)
+
+
+Even if “it seems to work”.
+
+5. free(NULL) is fine — don’t guard unless it clarifies intent
+
+Prefer:
+
+free(p);
+p = NULL;
+
+
+Over:
+
+if (p) free(p);
+
+6. Match allocation and ownership clearly
+
+If a function allocates memory, document who frees it.
+
+char *make_buffer(void) {
+    return malloc(100);
+}
+
+// caller must free
+
+
+Ambiguous ownership is the #1 source of leaks and double frees.
+
+7. Free in reverse order of allocation (when applicable)
+
+Especially for structures with multiple allocations.
+
+free(obj->data);
+free(obj);
+
+8. In long-running programs, free as soon as the memory is no longer needed
+
+Waiting “until the end” is sloppy and breaks under scale.
+
+Summary (rules you can memorize)
+
+free() returns heap memory to the allocator
+
+Never set to NULL before freeing
+
+free(NULL) is safe
+
+Free exactly once
+
+Set pointer to NULL after freeing
+
+Never use freed memory
+
+Only free what you allocated
+
+If you want, I can also explain:
+
+How allocators actually track freed blocks
+
+Why double-free is exploitable
+
+How tools like ASan/Valgrind detect misuse
+
+
+-------------------------------------------------------
+
+Because get_next_line is a streaming parser, not a one-shot string processor.
+
+The need comes from persistent leftover data between calls.
+
+I’ll be precise.
+
+Core constraint of get_next_line
+
+get_next_line must:
+
+Read arbitrary chunks from read()
+
+Return exactly one line per call
+
+Preserve unconsumed data for the next call
+
+That means after extracting a line, you are not done with the buffer.
+
+What actually happens step by step
+
+Assume this buffer (already read from read()):
+
+"hello\nworld\n42"
+
+First call
+
+You return: "hello\n"
+
+Leftover: "world\n42"
+
+You must keep "world\n42" for the next call.
+
+You cannot just reprocess from index 0 because:
+
+Index 0 now points to already-consumed data
+
+That data must be discarded
+
+So you need:
+
+substring(buffer, start = index_after_newline)
+
+
+That start is not 0.
+
+Why not just modify the original buffer?
+
+You could, but:
+
+You cannot rely on mutating buffers returned by read() safely across calls
+
+Many implementations concatenate into a static buffer
+
+You need a clean, owned string for the leftover
+
+Hence:
+
+rest = ft_substr(buffer, newline_index + 1, remaining_length);
+
+Why substr(start != 0) is essential
+Without it
+
+You’d have to:
+
+Shift memory manually (memmove)
+
+Track offsets everywhere
+
+Risk off-by-one bugs
+
+With it
+
+You:
+
+Cleanly slice the unconsumed part
+
+Reset your state for the next call
+
+Avoid touching already-returned data
+
+This is not convenience — it’s correctness and clarity.
+
+Mental model (important)
+
+Think of the buffer as:
+
+[ consumed | not yet consumed ]
+            ^
+            start
+
+
+substr(start) extracts only the not-yet-consumed region.
+
+Starting from 0 would mean re-parsing already-consumed data, which breaks the contract of get_next_line.
+
+Minimal pseudo-code showing necessity
+static char *stash;
+
+read_and_append(&stash);
+
+if (newline_found(stash)) {
+    line = substr(stash, 0, newline_index + 1);
+    tmp  = substr(stash, newline_index + 1, len);
+    free(stash);
+    stash = tmp;
+    return line;
+}
+
+
+That second substr cannot start at 0.
+
+Final answer in one sentence
+
+get_next_line needs substr(start != 0) because after returning one line, it must preserve and isolate the unconsumed portion of the buffer for the next call, and that portion does not begin at index 0.
+
+If you want, I can also explain:
+
+Why a static buffer is unavoidable
+
+Why some “simpler” implementations are subtly wrong
+
+How to implement GNL without substr (harder, but instructive)
+
+Just say.
+
+what is a good condition to let getnextline repeat in the main so i can go through the whole document?
+
+Use the return value of get_next_line itself.
+
+Correct, minimal condition
+while ((line = get_next_line(fd)) != NULL)
+{
+    // use line
+    free(line);
+}
+
+
+That is the canonical and correct loop.
+
+Why this works (precisely)
+
+A correct get_next_line implementation guarantees:
+
+Returns a heap-allocated string containing one line (including \n if present)
+
+Returns NULL when:
+
+End of file has been reached and
+
+No leftover data remains
+
+Or an error occurs
+
+So NULL is the only reliable termination signal.
+
+Why NOT other conditions
+❌ Checking for \n
+while (ft_strchr(line, '\n'))
+
+
+Wrong:
+
+The last line may not end with \n
+
+You’ll miss it
+
+❌ Checking read() > 0 in main
+
+Wrong:
+
+read() is internal to get_next_line
+
+Breaks encapsulation
+
+Fails when leftovers exist without a new read
+
+❌ Checking *line
+while (*line)
+
+
+Wrong:
+
+Empty lines ("\n") are valid
+
+You’ll stop early
+
+Handling errors vs EOF (optional refinement)
+
+If your get_next_line distinguishes error from EOF:
+
+char *line;
+
+while ((line = get_next_line(fd)))
+{
+    // process
+    free(line);
+}
+
+
+If you want to detect errors explicitly, you must design that into get_next_line
+(e.g. global error flag or separate return code). The standard 42-style version
+does not.
+
+One subtle but important rule
+
+You must free the line every iteration.
+
+Failing to do this is a leak even if the loop condition is correct.
+
+Summary (memorize this)
+
+Loop condition: while ((line = get_next_line(fd)) != NULL)
+
+NULL means “no more lines”
+
+Do not infer EOF any other way
+
+Always free(line) inside the loop
+
+That’s it.
+
+-----------------------------------------------------------------------
