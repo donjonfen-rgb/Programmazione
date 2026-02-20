@@ -6,7 +6,7 @@
 /*   By: ggaritta <ggaritta@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/20 13:39:41 by ggaritta          #+#    #+#             */
-/*   Updated: 2026/02/20 18:21:26 by ggaritta         ###   ########.fr       */
+/*   Updated: 2026/02/20 19:28:25 by ggaritta         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,29 +76,44 @@ void pb(t_queue *a, t_queue *b)
 	write(1, "pb\n", 3);
 }
 
-void scrollup(t_queue *q)
+void scroll_up(t_queue *q)
 {// controls missing
 	t_node	*newHead;
 	newHead = q->head->next;
 	q->tail->next = q->head;
-	q->tail = q->head;//?
+	q->tail = q->head;
 	q->head = newHead;
 	q->tail->next = NULL;
 }
 
-void scrolldown()
+t_node *get_penultimo(t_node *e)
 {
-	
+	if (!e || !e->next)
+		return NULL;
+
+	while (e->next->next)
+		e = e->next;
+	return e;
+}
+
+void scroll_down(t_queue *q)
+{
+	t_node *tmp;
+	tmp = get_penultimo(q->head);
+	tmp->next = NULL;
+	q->tail->next= q->head;
+	q->head = q->tail;
+	q->tail = tmp;
 }
 void ra(t_queue *a)
-{scrollup(a);	write(1, "ra\n", 3);}
+{scroll_up(a);	write(1, "ra\n", 3);}
 void rb(t_queue *b)
-{scrollup(b);	write(1, "rb\n", 3);}
+{scroll_up(b);	write(1, "rb\n", 3);}
 void rr(t_queue *a, t_queue *b)
-{scrollup(a);scrollup(b);	write(1, "rr\n", 3);}
+{scroll_up(a);scroll_up(b);	write(1, "rr\n", 3);}
 void rra(t_queue *a)
-{scrolldown(a);	write(1, "rra\n", 4);}
+{scroll_down(a);	write(1, "rra\n", 4);}
 void rrb(t_queue *b)
-{scrolldown(b);	write(1, "rrb\n", 4);}
+{scroll_down(b);	write(1, "rrb\n", 4);}
 void rrr(t_queue *a, t_queue *b)
-{scrolldown(a);scrolldown(b);	write(1, "rrr\n", 4);}
+{scroll_down(a);scroll_down(b);	write(1, "rrr\n", 4);}
