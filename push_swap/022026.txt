@@ -1,0 +1,850 @@
+working on a project called push_swap. you are a 10+ years senior developer in C language and on the subject, act like it! be concise clever and efficient. why and how to use a function that holds another function as a parameter
+
+Good. You’re touching one of the most powerful tools in C: function pointers. If you use them correctly in push_swap, your code becomes cleaner, more generic, and easier to optimize.
+
+🔥 Why use a function as a parameter?
+
+Because it lets you:
+
+Remove duplication
+
+Abstract behavior
+
+Make algorithms configurable
+
+Write generic execution logic
+
+In push_swap, this is extremely useful for:
+
+Applying operations (sa, sb, ra, rb, etc.)
+
+Sorting strategies
+
+Cost calculation strategies
+
+Iterating operations over stacks
+
+🧠 Core Concept
+
+In C, functions are not first-class objects, but you can pass pointers to functions.
+
+Example type:
+
+void    operation(t_stack *a, t_stack *b);
+
+Function pointer type:
+
+void (*op)(t_stack *, t_stack *);
+✅ Basic Example
+Without function pointer (bad repetition)
+void    apply_sa(t_stack *a, t_stack *b)
+{
+    sa(a);
+    write(1, "sa\n", 3);
+}
+
+void    apply_sb(t_stack *a, t_stack *b)
+{
+    sb(b);
+    write(1, "sb\n", 3);
+}
+
+Duplicated logic.
+
+With function pointer (clean & scalable)
+void    execute(t_stack *a, t_stack *b,
+                void (*op)(t_stack *, t_stack *),
+                char *name)
+{
+    op(a, b);
+    write(1, name, ft_strlen(name));
+}
+
+Usage:
+
+execute(a, b, sa, "sa\n");
+execute(a, b, rb, "rb\n");
+
+Now your execution logic is centralized.
+
+🎯 Real push_swap Use Case
+1️⃣ Strategy injection
+
+Instead of hardcoding a sorting behavior:
+
+void sort(t_stack *a, t_stack *b)
+{
+    if (size(a) <= 3)
+        sort_three(a);
+    else
+        big_sort(a, b);
+}
+
+You can pass strategy:
+
+void sort(t_stack *a, t_stack *b,
+          void (*strategy)(t_stack *, t_stack *))
+{
+    strategy(a, b);
+}
+
+Now you can test multiple algorithms easily.
+
+2️⃣ Generic stack iteration
+
+Instead of:
+
+while (node)
+{
+    do_something(node);
+    node = node->next;
+}
+
+You write:
+
+void    stack_iter(t_stack *stack, void (*f)(t_node *))
+{
+    while (stack)
+    {
+        f(stack);
+        stack = stack->next;
+    }
+}
+
+Now you can plug:
+
+print
+
+index assignment
+
+cost calculation
+
+flag reset
+
+Zero duplication.
+
+🧩 Advanced Pattern (Very Useful)
+Operation Table
+
+In serious push_swap implementations, you define:
+
+typedef struct s_op
+{
+    char    *name;
+    void    (*f)(t_stack *, t_stack *);
+}   t_op;
+
+Then:
+
+t_op ops[] = {
+    {"sa\n", sa},
+    {"sb\n", sb},
+    {"ss\n", ss},
+    {"ra\n", ra},
+    {"rb\n", rb},
+};
+
+Then call dynamically:
+
+execute(a, b, ops[i].f, ops[i].name);
+
+This is clean, extensible, and elegant.
+
+🚀 When NOT to Use It
+
+Don’t use function pointers when:
+
+Behavior is fixed
+
+It reduces readability
+
+You’re just overengineering
+
+push_swap rewards clean architecture, not clever tricks.
+
+🧠 Mental Model
+
+A function pointer is just:
+
+“Let me decide what to execute later.”
+
+It decouples what to do from when/how to do it.
+
+That’s real software engineering.
+
+⚡ Pro Tip for push_swap
+
+You can use function pointers to:
+
+Abstract rotate direction (ra vs rb)
+
+Abstract stack selection
+
+Inject cost functions
+
+Build an operation dispatcher
+
+Implement a checker bonus cleanly
+
+If you want, show me part of your push_swap architecture and I’ll tell you exactly where function pointers will give you leverage instead of complexity.
+
+if i were to do this: void	ft_creation()
+{
+	t_queue a;
+	t_queue b;
+	
+	a = createQ();
+	b = createQ();
+}
+void push_swap(char *nums)
+{
+	ft_creation();
+}
+will the two queue be alive still during push swap next operations?
+how do i make so i can return both created queues
+what are the best practices? 
+
+Good question. This is where many 42 students shoot themselves in the foot.
+
+Short answer:
+
+❌ No — a and b will NOT be alive after ft_creation() returns.
+
+Let’s break it down properly.
+
+🧠 Why they die
+void ft_creation()
+{
+    t_queue a;
+    t_queue b;
+
+    a = createQ();
+    b = createQ();
+}
+
+a and b are local (stack) variables.
+
+When ft_creation() returns:
+
+Its stack frame is destroyed
+
+a and b cease to exist
+
+Their memory becomes invalid
+
+So in:
+
+void push_swap(char *nums)
+{
+    ft_creation();
+}
+
+There is no access to a and b.
+
+🚀 How to return both queues properly
+
+You have 3 correct patterns.
+
+✅ 1️⃣ Best Practice for push_swap: Wrap them in a struct
+
+This is the cleanest architecture.
+
+typedef struct s_ps
+{
+    t_queue a;
+    t_queue b;
+}   t_ps;
+
+Now:
+
+t_ps ft_creation(void)
+{
+    t_ps ps;
+
+    ps.a = createQ();
+    ps.b = createQ();
+    return ps;
+}
+
+Usage:
+
+void push_swap(char *nums)
+{
+    t_ps ps;
+
+    ps = ft_creation();
+    // ps.a and ps.b are valid here
+}
+
+✔ Clean
+✔ Scalable
+✔ No globals
+✔ Easy to pass around
+
+This is what a senior would do.
+
+✅ 2️⃣ Pass by pointer (also very clean)
+void ft_creation(t_queue *a, t_queue *b)
+{
+    *a = createQ();
+    *b = createQ();
+}
+
+Usage:
+
+void push_swap(char *nums)
+{
+    t_queue a;
+    t_queue b;
+
+    ft_creation(&a, &b);
+}
+
+This modifies caller memory directly.
+
+Very C-style. Very clean.
+
+⚠️ 3️⃣ Allocate dynamically (only if necessary)
+t_queue *ft_creation(void)
+{
+    t_queue *queues;
+
+    queues = malloc(sizeof(t_queue) * 2);
+    if (!queues)
+        return NULL;
+    queues[0] = createQ();
+    queues[1] = createQ();
+    return queues;
+}
+
+But now you must free it.
+
+For push_swap, this is usually unnecessary.
+
+Avoid heap allocation when stack is enough.
+
+❌ What NOT to do
+Returning pointer to local variable
+t_queue *ft_creation()
+{
+    t_queue a;
+    return &a;  // ❌ WRONG — undefined behavior
+}
+
+This is classic UB. Instant -42 grade.
+
+🏆 What’s the cleanest architecture for push_swap?
+
+In real projects I structure it like this:
+
+typedef struct s_ps
+{
+    t_stack *a;
+    t_stack *b;
+    int     size;
+}   t_ps;
+
+Then every function becomes:
+
+void    rotate_a(t_ps *ps);
+void    push_b(t_ps *ps);
+void    big_sort(t_ps *ps);
+
+You pass one pointer everywhere.
+
+That makes:
+
+State centralized
+
+Debugging easier
+
+Code scalable
+
+No globals
+
+No messy parameter lists
+
+🎯 Senior Advice
+
+For push_swap:
+
+Always create one main state struct and pass it everywhere.
+
+You are not writing small exercises anymore.
+You're writing a small engine.
+
+⚡ Final Answer Summary
+Method	Good?	When to use
+Wrap in struct	⭐⭐⭐ BEST	push_swap architecture
+Pass by pointer	⭐⭐⭐ Very good	simple cases
+Dynamic malloc array	⭐ Meh	rarely needed
+Return local address	❌ Never	undefined behavior
+
+If you show me your t_queue structure, I can tell you how I would architect the whole push_swap cleanly from day one.
+
+how can i get the previous to last element of the list having the struct composed only by value and address?
+
+Good. Now we’re talking real linked list mechanics.
+
+You said your struct only has:
+
+a value
+
+an address (so I assume next)
+
+Something like:
+
+typedef struct s_node
+{
+    int             value;
+    struct s_node   *next;
+}   t_node;
+
+So this is a singly linked list.
+
+🎯 Goal
+
+Get the previous-to-last node (the node before the last one).
+
+Example:
+
+A -> B -> C -> D -> NULL
+
+You want C.
+
+✅ Correct & Safe Implementation
+t_node *get_prev_last(t_node *head)
+{
+    if (!head || !head->next)
+        return NULL; // 0 or 1 element → no previous-to-last
+
+    while (head->next->next)
+        head = head->next;
+
+    return head;
+}
+🧠 Why this works
+
+We stop when:
+
+head->next->next == NULL
+
+That means:
+
+head -> second_last
+head->next -> last
+
+So head is exactly what we want.
+
+⚠️ Edge Cases (Very Important in push_swap)
+List size	Result
+0	NULL
+1	NULL
+2	first node
+≥3	correct second last
+
+Always guard against:
+
+if (!head || !head->next)
+
+Otherwise you segfault.
+
+🔥 Cleaner Version (Senior Style)
+
+Avoid modifying the original pointer:
+
+t_node *get_prev_last(t_node *head)
+{
+    t_node *current;
+
+    if (!head || !head->next)
+        return NULL;
+
+    current = head;
+    while (current->next->next)
+        current = current->next;
+    return current;
+}
+
+Cleaner for debugging.
+
+🚀 Performance
+
+Time: O(n)
+
+Space: O(1)
+
+For push_swap, this is acceptable because reverse rotate (rra / rrb) needs this unless you optimize differently.
+
+💡 Senior Optimization Advice
+
+If you frequently need:
+
+last
+
+previous last
+
+tail operations
+
+Then a singly linked list is not optimal.
+
+Better options:
+
+1️⃣ Store tail pointer in your stack struct
+typedef struct s_stack
+{
+    t_node  *head;
+    t_node  *tail;
+    int     size;
+}   t_stack;
+
+Now:
+
+Getting last = O(1)
+
+Getting prev-last still O(n) unless doubly linked
+
+2️⃣ Use doubly linked list (best for push_swap rotations)
+typedef struct s_node
+{
+    int             value;
+    struct s_node   *next;
+    struct s_node   *prev;
+}   t_node;
+
+Then:
+
+prev_last = tail->prev;
+
+rra becomes clean and fast
+
+For push_swap, doubly linked lists make reverse operations much cleaner.
+
+🏆 Real Senior Advice for push_swap
+
+If you're implementing:
+
+ra
+
+rb
+
+rra
+
+rrb
+
+A doubly linked list will simplify your life massively.
+
+If you're forced to use singly list, your function above is the correct way.
+
+If you want, show me your current stack structure and I’ll tell you whether your design will hurt you later in the project.
+
+is there then really no wat of reverse scrolling the list without implementing the prev?
+
+Short answer:
+
+❌ You cannot truly traverse backward in a singly linked list without either:
+
+storing prev
+
+or recomputing it every time
+
+That’s a structural limitation, not a C limitation.
+
+You only have:
+
+node -> next
+
+There is no memory of what came before.
+
+🧠 Why it’s impossible
+
+A singly linked list is a one-way chain.
+
+A -> B -> C -> D -> NULL
+
+From D, there is zero information about C.
+
+Memory does not store reverse relationships unless you explicitly put them there.
+
+🚀 But… you can simulate reverse traversal
+
+There are 3 practical techniques.
+
+✅ 1️⃣ Recompute previous every time (O(n))
+
+Classic approach:
+
+t_node *find_prev(t_node *head, t_node *target)
+{
+    if (!head || head == target)
+        return NULL;
+
+    while (head && head->next != target)
+        head = head->next;
+
+    return head;
+}
+
+Used internally for rra.
+
+Cost: O(n)
+Acceptable for push_swap sizes (500 max).
+
+✅ 2️⃣ Reverse the entire list temporarily (advanced trick)
+
+You can reverse the list in-place:
+
+t_node *reverse_list(t_node *head)
+{
+    t_node *prev = NULL;
+    t_node *next;
+
+    while (head)
+    {
+        next = head->next;
+        head->next = prev;
+        prev = head;
+        head = next;
+    }
+    return prev;
+}
+
+But this:
+
+Mutates structure
+
+Breaks order logic
+
+Is overkill for push_swap
+
+Not recommended.
+
+✅ 3️⃣ The Smart push_swap Solution (Best)
+
+Don’t traverse backward.
+
+Instead, implement rra like this:
+
+Algorithm for reverse rotate (singly list)
+
+Find second-to-last
+
+Detach last
+
+Put last in front
+
+void    rra(t_stack *a)
+{
+    t_node *prev_last;
+    t_node *last;
+
+    if (!a->head || !a->head->next)
+        return;
+
+    prev_last = get_prev_last(a->head);
+    last = prev_last->next;
+
+    prev_last->next = NULL;
+    last->next = a->head;
+    a->head = last;
+}
+
+No backward traversal needed.
+
+You just restructure links.
+
+🧠 Key Insight
+
+You don’t need reverse traversal.
+
+You only need:
+
+to find second last
+
+to relink nodes
+
+Traversal direction doesn't matter if you manipulate pointers correctly.
+
+🔥 Senior push_swap Advice
+
+For n ≤ 500:
+
+O(n) per reverse rotate is fine.
+
+Your algorithm complexity dominates anyway.
+
+If you were writing:
+
+a real-time engine
+
+kernel structures
+
+high-frequency trading system
+
+Then yes, doubly linked list would matter.
+
+For push_swap?
+Singly linked list is perfectly fine and common.
+
+🏆 Final Verdict
+
+Is reverse traversal possible without prev?
+
+No.
+
+Can you implement reverse operations efficiently anyway?
+
+Yes. Easily.
+
+If you want, I can show you a minimal, clean, battle-tested stack structure optimized specifically for push_swap scoring.
+
+
+/////////////////////////////////////////////////////////////////////////
+
+Good. That’s exactly the right concern.
+
+When you switch to a circular list, you lose this natural sentinel:
+
+while (node)   // stops at NULL
+
+Because now:
+
+tail->next == head
+
+There is no NULL.
+So while (node) becomes an infinite loop.
+
+You must replace NULL-based stopping with structure-based stopping.
+
+✅ The Correct Replacement: Stop at the Starting Node
+
+In a circular list, the natural boundary is:
+
+“When I come back to where I started.”
+
+🔵 Instead of
+while (node)
+{
+    ...
+    node = node->next;
+}
+🟢 Use a Start Sentinel
+t_node *start;
+t_node *node;
+
+if (!q->head)
+    return;
+
+start = q->head;
+node = start;
+
+while (1)
+{
+    ...
+    node = node->next;
+    if (node == start)
+        break;
+}
+
+No do while.
+No NULL.
+Clean and explicit.
+
+🧠 Why This Works
+
+Because circular invariant guarantees:
+
+Eventually node->next loops back to start
+
+So node == start becomes your new termination condition.
+
+That is your new “NULL”.
+
+🚀 Cleaner Version (More Elegant)
+
+Avoid while (1) if you dislike it:
+
+t_node *node;
+t_node *start;
+
+start = q->head;
+node = start;
+
+while (node->next != start)
+{
+    ...
+    node = node->next;
+}
+
+/* process last node if needed */
+
+This mimics:
+
+while (node->next != NULL)
+
+But adapted to circular logic.
+
+⚠️ Very Important Edge Case
+
+You must always protect empty list:
+
+if (!q->head)
+    return;
+
+Otherwise comparing against start is undefined.
+
+🧩 Alternative: Track Size (Very Clean for push_swap)
+
+If your struct contains:
+
+typedef struct s_queue
+{
+    t_node  *head;
+    t_node  *tail;
+    int     size;
+} t_queue;
+
+Then traversal becomes:
+
+t_node *node = q->head;
+int i = 0;
+
+while (i < q->size)
+{
+    ...
+    node = node->next;
+    i++;
+}
+
+No NULL.
+No start comparison.
+No infinite loop risk.
+
+For push_swap, this is often the cleanest solution.
+
+🏆 Senior Advice
+
+If you go circular:
+
+✔ Always keep size
+✔ Always keep tail
+✔ Never rely on implicit termination
+✔ Define traversal boundary explicitly
+
+Mental Shift
+
+In linear list:
+
+NULL defines the end.
+
+In circular list:
+
+Your invariant defines the end.
+
+You must now think in terms of:
+
+start node
+
+or iteration count
+
+If you want, I can show you what a clean circular + size push_swap stack struct looks like, optimized for rotations and cost calculation.
