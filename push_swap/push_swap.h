@@ -6,7 +6,7 @@
 /*   By: ggaritta <ggaritta@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/20 13:45:06 by ggaritta          #+#    #+#             */
-/*   Updated: 2026/02/26 22:29:35 by ggaritta         ###   ########.fr       */
+/*   Updated: 2026/02/27 20:36:13 by ggaritta         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,10 @@ typedef struct s_node	t_node;
 
 struct s_node
 {
+	int		id;
 	int		value;
+	int		cost;
+	t_node	*prev;
 	t_node	*next;
 };
 
@@ -33,14 +36,19 @@ typedef struct s_queue
 	int		size;
 }	t_queue;
 
-void read_me(char *inputs);
+typedef struct s_stacks
+{
+	t_queue	a;
+	t_queue	b;
+} t_stacks;
+
 //qops.c
-void	ft_creation();
-void push_swap(char *nums);
-int decappler(t_queue *q);
-void knot_me(t_queue *q, int val);
-bool qie(t_queue *q);
-t_queue *createQ();
+void	ft_createStacks();
+void	push_swap(t_queue *nums);
+int		decappler(t_queue *q);
+void	knot_me(t_queue *q, int val);
+bool	qie(t_queue *q);
+t_queue	*createQ();
 //moves.c
 void	sa(t_queue *q);
 void	sb(t_queue *q);
@@ -60,9 +68,15 @@ void	rrr(t_queue *a, t_queue *b);
 
 //ftsplit.c
 bool isWS(char c);
+int findWords(char *s);
+int ft_strtololol(char *num);
+int *split(char *s);
 
 //parser.c
-bool ft_pastramiOrSalami(char *str);
+bool	ft_pastramiOrSalami(char *str);
+bool	isN(char c);
+bool	ft_no_duplos(int *vals)
+
 
 
 

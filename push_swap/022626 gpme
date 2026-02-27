@@ -1,0 +1,752 @@
+act as a 10+ years senior developer in C language. be concise, smart, efficient.
+why if argv is a char **argv, so a matrix, so an array containing arrays on for every index should i acquire or manage the parameter as a matrix and not a single array right?
+
+Think of it precisely, not loosely.
+
+char **argv is not a 2D matrix.
+It is an array of pointers to char.
+
+At runtime, it looks like this:
+
+argv
+ ├── argv[0] → "program_name"
+ ├── argv[1] → "first_arg"
+ ├── argv[2] → "second_arg"
+ └── ...
+
+So:
+
+argv → pointer to pointer to char
+
+argv[i] → char * (a single string)
+
+argv[i][j] → a single char
+
+Why it's not a matrix
+
+A real matrix like:
+
+char arr[10][20];
+
+Memory is contiguous.
+
+Every row has fixed length (20).
+
+You manage it as a true 2D block.
+
+But argv:
+
+Each argv[i] points to a different memory location.
+
+Strings can have different lengths.
+
+Memory is not guaranteed contiguous.
+
+You don’t own the memory (OS provides it).
+
+So treating it like a fixed 2D matrix is conceptually wrong.
+
+How you should treat it
+
+You treat it as:
+
+An array of N independent null-terminated strings.
+
+You iterate rows first:
+
+for (int i = 0; i < argc; i++) {
+    printf("%s\n", argv[i]);
+}
+
+If needed, then per string:
+
+for (int i = 0; i < argc; i++) {
+    for (int j = 0; argv[i][j] != '\0'; j++) {
+        // process each character
+    }
+}
+Key Senior-Level Takeaway
+
+char **argv is structurally similar to a 2D array in syntax usage,
+but semantically and memory-wise it is an array of pointers, not a matrix.
+
+So:
+
+✔ Manage it as an array of strings
+✘ Do not assume fixed width rows
+✘ Do not treat it as a contiguous 2D block
+
+That distinction matters for memory layout, allocation, and correctness.
+
+i am currently working on push swap and trying to understand how to manage the argv. debating if i should pass myself to the pushswap function a single pointer to char or the array of pointers
+
+Good. This is the right question to ask early in push_swap.
+
+Short answer
+
+Pass char **argv + int argc to your parsing layer.
+After parsing, never use argv again.
+
+push_swap itself should not deal with strings at all — only integers.
+
+Clean Architecture (10+ year mindset)
+1️⃣ main → parsing layer
+int main(int argc, char **argv)
+{
+    int *values;
+    int count;
+
+    values = parse_args(argc, argv, &count);
+    push_swap(values, count);
+    free(values);
+}
+2️⃣ parse_args handles argv complexity
+
+Why?
+
+Because push_swap logic is about stacks and sorting —
+not string splitting, validation, overflow, or duplicates.
+
+If you pass a single char *, you're already coupling parsing logic into algorithm logic.
+
+Bad separation of concerns.
+
+Important: 42 push_swap Edge Case
+
+You must handle:
+
+./push_swap 1 2 3
+./push_swap "1 2 3"
+
+So your parser must:
+
+Detect if argc == 2
+
+Split argv[1]
+
+Or iterate normally from argv[1] to argv[argc-1]
+
+This is much easier if you keep char **argv.
+
+Why NOT pass char * to push_swap
+
+If you do:
+
+push_swap(argv[1]);
+
+Now:
+
+You must split inside push_swap
+
+You mix parsing + algorithm
+
+You lose flexibility
+
+Harder to test
+
+Bad layering.
+
+Correct Mental Model
+
+argv is just raw input transport.
+
+After parsing:
+
+Convert to int *
+
+Validate
+
+Detect duplicates
+
+Check overflow
+
+Normalize if needed
+
+Then your real function is:
+
+void push_swap(int *arr, int size);
+
+That’s clean.
+
+Professional Rule
+
+Parsing layer handles:
+
+string splitting
+
+atoi with overflow check
+
+error handling
+
+memory allocation
+
+Algorithm layer handles:
+
+stacks
+
+operations
+
+sorting logic
+
+Never mix them.
+
+If you want, I can show you the cleanest possible parsing strategy for push_swap that avoids common 42 mistakes.
+
+if the first argument is the file name, the second is the string i insert, the argc is able to count how many arguments are being passed file name included, but is the string inserted by my considered as one or multiple args?
+
+Precise answer:
+
+It depends on how you invoke the program in the shell — not on your C code.
+
+Case 1 — Without quotes
+./push_swap 1 2 3
+
+Shell splits on spaces.
+
+You get:
+
+argc = 4
+
+argv[0] = "./push_swap"
+argv[1] = "1"
+argv[2] = "2"
+argv[3] = "3"
+
+Each number is a separate argument.
+
+Case 2 — With quotes
+./push_swap "1 2 3"
+
+Shell does NOT split inside quotes.
+
+You get:
+
+argc = 2
+
+argv[0] = "./push_swap"
+argv[1] = "1 2 3"
+
+That entire string is ONE argument.
+
+Key Point
+
+The shell decides how many arguments exist.
+Your program just receives what the shell already split.
+
+C does zero splitting.
+
+What push_swap must handle (42 requirement)
+
+You must support BOTH:
+
+./push_swap 1 2 3
+./push_swap "1 2 3"
+
+So logic becomes:
+
+if (argc == 2)
+    split(argv[1]);
+else
+    use argv[1] .. argv[argc - 1];
+Senior Dev Mental Model
+
+argc = number of tokens the shell produced.
+
+Quotes change tokenization.
+
+Your job is to normalize input into:
+
+int *values
+int count
+
+After that, forget argc/argv ever existed.
+
+If you want, next we can clarify the common parsing trap that causes most push_swap segfaults.
+
+what is the difference between these and how to handle the differences:./push_swap 1 2 3
+./push_swap "1 2 3".
+in the latter case i believe i will have to manage a single array of chars so the argc is equal to 2? in the first case  1 2 3 4 ... are those still strings and will the argc and so then the argv be higher than 2?
+
+You're thinking correctly. Let’s cleanly break it down.
+
+Case 1
+./push_swap 1 2 3
+What the shell does
+
+Splits on spaces.
+
+What your program receives
+argc = 4
+
+argv[0] = "./push_swap"
+argv[1] = "1"
+argv[2] = "2"
+argv[3] = "3"
+
+✔ Each number is a string
+✔ argc > 2
+✔ You already have separate tokens
+✔ No splitting needed
+
+Case 2
+./push_swap "1 2 3"
+What the shell does
+
+Keeps everything inside quotes as ONE token.
+
+What your program receives
+argc = 2
+
+argv[0] = "./push_swap"
+argv[1] = "1 2 3"
+
+✔ Still a string
+✔ But now it's ONE string containing spaces
+✔ You must split it yourself
+
+Important Clarification
+
+Even in:
+
+./push_swap 1 2 3
+
+These are STILL strings.
+
+There is no such thing as numeric CLI arguments in C.
+
+Everything in argv is char *.
+
+You must always convert:
+
+int value = ft_atoi(argv[i]);
+So Yes — You Are Correct
+Command	argc	What you must do
+./push_swap 1 2 3	4	Iterate argv[1..]
+./push_swap "1 2 3"	2	Split argv[1]
+Clean Way to Handle Both
+
+Senior-level approach:
+
+if (argc == 2)
+{
+    // split argv[1]
+}
+else
+{
+    // use argv[1] to argv[argc - 1]
+}
+
+Normalize both cases into:
+
+int *values
+int count
+
+After normalization, your sorting code should not care how input came in.
+
+Final Mental Model
+
+Shell decides argument count.
+
+C receives only strings.
+
+Your job is to normalize input.
+
+push_swap logic must never deal with raw strings.
+
+If you want next, I can show you the cleanest parsing pipeline for push_swap that avoids memory leaks and double-free issues.
+
+where should my push swap start and the settings made on main end?
+
+Good — now you're thinking about architecture. That’s senior-level thinking.
+
+The Rule
+
+main = input validation + setup
+push_swap = pure algorithm
+
+Never mix them.
+
+What main Should Do
+
+Only 4 responsibilities:
+
+Validate argument count
+
+Parse + split if needed
+
+Convert to int
+
+Handle errors + memory cleanup
+
+Example structure:
+
+int main(int argc, char **argv)
+{
+    int *values;
+    int count;
+
+    if (argc < 2)
+        return (0);
+
+    values = parse_arguments(argc, argv, &count);
+    if (!values)
+        return (error());
+
+    push_swap(values, count);
+
+    free(values);
+    return (0);
+}
+
+That’s it.
+
+No stack logic.
+No sorting logic.
+No operations.
+
+Where push_swap Should Start
+
+push_swap should start after everything is validated and converted.
+
+Meaning:
+
+No strings
+
+No splitting
+
+No atoi
+
+No duplicate checks
+
+No overflow checks
+
+It should receive:
+
+void push_swap(int *arr, int size);
+
+At this point:
+
+All values are valid integers
+
+No duplicates
+
+Already normalized if you choose to
+
+Memory is clean
+
+Clean Separation of Layers
+Layer 1 — Input Layer (main + parsing)
+
+Handles:
+
+argc / argv
+
+ft_split
+
+ft_atoi with overflow check
+
+duplicate detection
+
+error printing
+
+Layer 2 — Algorithm Layer (push_swap)
+
+Handles:
+
+stack creation
+
+push / swap / rotate logic
+
+sorting strategy
+
+printing operations
+
+Practical Boundary
+
+If your push_swap() function contains:
+
+char *
+
+ft_split
+
+ft_atoi
+
+printf("Error")
+
+You designed it wrong.
+
+Even Better Structure (Recommended)
+main.c
+parsing.c
+validation.c
+stack_init.c
+push_swap.c
+operations.c
+algorithm_small.c
+algorithm_big.c
+
+This keeps it clean and defendable during evaluation.
+
+Golden Principle
+
+main prepares the battlefield.
+push_swap fights the war.
+
+If you want, next we can define the ideal internal stack representation for maximum operation efficiency.
+
+when should i check if the number inserted in the list is contained in int?
+
+Immediately during parsing.
+Not later. Not inside push_swap.
+
+Overflow checking belongs to the string → int conversion stage.
+
+Correct Order During Parsing
+
+For every token:
+
+Validate it’s a valid numeric string
+
+Convert safely (with overflow detection)
+
+Store as int
+
+Later → check duplicates
+
+Why During Conversion?
+
+Because this is wrong:
+
+int n = atoi(str);   // ❌ dangerous
+
+If str = "999999999999"
+atoi invokes undefined behavior on overflow.
+
+You already lost control.
+
+Correct Approach
+
+Write a safe ft_atol-style function:
+
+long value = safe_atol(str, &error_flag);
+
+Then:
+
+if (value < INT_MIN || value > INT_MAX)
+    error();
+
+Only after that:
+
+arr[i] = (int)value;
+Why Use long?
+
+Because:
+
+int may overflow during accumulation
+
+long gives you headroom
+
+You compare against INT_MIN and INT_MAX
+
+When Exactly?
+
+Inside your parsing loop:
+
+for each token:
+    validate_number_format(token);
+    value = safe_atol(token);
+    if (overflow)
+        error();
+    store value;
+
+After the entire array is built:
+
+check_duplicates(arr);
+Senior-Level Insight
+
+All input validation must be completed before:
+
+stack creation
+
+normalization
+
+sorting
+
+memory-heavy operations
+
+Fail fast. Exit early.
+
+Hard Rule for push_swap
+
+Overflow check happens:
+✔ During conversion
+✘ Not after storing
+✘ Not inside algorithm
+✘ Not during stack operations
+
+If you want, I can show you the cleanest overflow-safe ft_atol logic used in high-scoring push_swap implementations.
+
+give me the list of the containers bigger than int and theformat identifiers for them please
+
+Concise and practical (C, standard 64-bit system assumed).
+
+Integer Types Bigger Than int
+Standard Types (C99+)
+Type	Typical Size	Signed Range	printf format
+long	8 bytes (Linux/macOS)	−2^63 → 2^63−1	%ld
+long long	8 bytes	−2^63 → 2^63−1	%lld
+intmax_t	8 bytes (usually)	implementation-defined max	%jd
+Unsigned Versions
+Type	printf format
+unsigned long	%lu
+unsigned long long	%llu
+uintmax_t	%ju
+Important 42 / push_swap Context
+
+On Linux (x86_64):
+
+int → 4 bytes
+
+long → 8 bytes
+
+long long → 8 bytes
+
+On Windows (LLP64):
+
+int → 4 bytes
+
+long → 4 bytes ⚠
+
+long long → 8 bytes
+
+So for portability:
+
+✔ safest large type → long long
+✔ most correct generic type → intmax_t
+
+What You Should Use in push_swap
+
+Use:
+
+long value;
+
+or
+
+long long value;
+
+Then compare:
+
+if (value < INT_MIN || value > INT_MAX)
+
+That’s enough.
+
+You do NOT need int128, size_t, etc.
+
+Bonus (scanf formats)
+Type	scanf format
+long	%ld
+long long	%lld
+intmax_t	%jd
+Senior Advice
+
+For push_swap:
+
+Use long for parsing.
+
+Store as int.
+
+Never use atoi.
+
+Never trust overflow behavior.
+
+If you want, I can next give you a bulletproof overflow-safe conversion pattern in ~15 lines.
+
+diff between atoi and atol?
+
+Straight to the point.
+
+atoi vs atol
+Function	Return Type	Handles Bigger Range	Overflow Behavior
+atoi	int	❌ No	Undefined behavior
+atol	long	✔ Yes	Undefined behavior
+What They Actually Do
+int  atoi(const char *str);
+long atol(const char *str);
+
+Both:
+
+Skip leading whitespace
+
+Handle optional + / -
+
+Stop at first non-digit
+
+Do zero error reporting
+
+The Real Problem
+
+Neither detects overflow safely.
+
+Example:
+
+atoi("9999999999999999");
+
+Result → undefined behavior.
+Not guaranteed wrap. Not guaranteed clamp. Just UB.
+
+Same for atol.
+
+Why atol Is Slightly Better
+
+Because:
+
+long is usually bigger than int
+
+Gives you room to check against INT_MIN / INT_MAX
+
+Typical push_swap pattern:
+
+long value = atol(str);
+
+if (value < INT_MIN || value > INT_MAX)
+    error();
+
+Still not perfect — because overflow inside atol is already UB.
+
+Correct Professional Solution
+
+Use:
+
+strtol()
+
+Why?
+
+long strtol(const char *nptr, char **endptr, int base);
+
+It:
+✔ Detects overflow
+✔ Sets errno = ERANGE
+✔ Lets you verify full string was consumed
+
+Example:
+
+char *end;
+errno = 0;
+long value = strtol(str, &end, 10);
+
+if (errno == ERANGE || *end != '\0')
+    error();
+
+This is the correct, safe approach.
+
+Senior-Level Takeaway
+
+atoi → forbidden in serious code
+
+atol → slightly less bad
+
+strtol → correct tool
+
+For push_swap → either implement your own safe parser OR use strtol
+
+If you want, I can show you the minimal 42-compliant safe conversion function.
