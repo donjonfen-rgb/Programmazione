@@ -6,7 +6,7 @@
 /*   By: ggaritta <ggaritta@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/20 14:50:17 by ggaritta          #+#    #+#             */
-/*   Updated: 2026/03/13 19:40:58 by ggaritta         ###   ########.fr       */
+/*   Updated: 2026/03/12 21:51:41 by ggaritta         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,10 +53,10 @@ t_stacks create_stacks(void)
 // 	return (q);
 // }
 
-// bool qie(t_queue q)
-// {
-// 	return q.size == 0;
-// }
+bool qie(t_queue q)
+{
+	return q.size == 0;
+}
 
 void knot_me(t_queue q, int val)
 {
@@ -66,7 +66,6 @@ void knot_me(t_queue q, int val)
 	if (!newNod)
 		return;
 	newNod->value = val;
-	newNod->id = -1;
 	newNod->next = NULL;
 	if (q.head == NULL)
 	{
@@ -81,23 +80,6 @@ void knot_me(t_queue q, int val)
 	q.size++;
 }
 
-void decappler_two_point_o(t_stacks s)
-{
-	t_node *knot;
-	t_node *future_knot;
-
-	knot = s.a.head;
-	while (knot)
-	{
-		if (!knot || !knot->next)
-			return;
-		future_knot = knot->next;
-		free(knot);
-		knot = future_knot;
-	}
-	knot = NULL;
-}
-
 int decappler(t_queue q)
 {
 	int oVal;
@@ -105,14 +87,11 @@ int decappler(t_queue q)
 	oVal = 0;
 	if (q.head == NULL)
 		return false;
-	oNod = q.head;
-	oVal = oNod->value;
 	q.head = q.head->next;
+	oNod = q.head;
+	oVal = q.head->value;
 	free(oNod);
 	q.size--;
 	return (oVal);
 }
-/*alla fine della liberazione bis
 
-- cos'e' il max costo totale???
-*/

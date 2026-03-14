@@ -6,6 +6,10 @@ grokking pfd and other valuable pdfs
 	https://github.com/swadhinsekhar/books/tree/master
 push swap explainer
 	https://www.youtube.com/watch?v=wRvipSG4Mmk
+visualizer diff
+	https://github.com/kurval/42-push_swap?tab=readme-ov-file
+	https://www.toptal.com/developers/sorting-algorithms/bubble-sort
+	
 
 	set int min and max as max values
 	abs?

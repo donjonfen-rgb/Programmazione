@@ -6,12 +6,15 @@
 /*   By: ggaritta <ggaritta@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/18 12:13:11 by ggaritta          #+#    #+#             */
-/*   Updated: 2026/02/27 21:18:22 by ggaritta         ###   ########.fr       */
+/*   Updated: 2026/03/12 11:09:23 by ggaritta         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "push_swap.h"
-
+void precontrols()
+{
+	
+}
 void push_swap(t_stacks s)
 {
 	
@@ -29,7 +32,7 @@ int main(int ac, char **av)
 		s.a.head = ft_split(av[1]);
 		if (ft_no_duplos(s.a.head))
 			return (ft_duploerror(2));
-	else if (ac >2)
+	else if (ac > 2)
 	{
 		while (i < ac)
 			if (ft_pastramiOrSalami(av[i]))

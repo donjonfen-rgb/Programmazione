@@ -6,7 +6,7 @@
 /*   By: ggaritta <ggaritta@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/26 16:44:32 by ggaritta          #+#    #+#             */
-/*   Updated: 2026/02/27 20:50:07 by ggaritta         ###   ########.fr       */
+/*   Updated: 2026/03/12 21:18:40 by ggaritta         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -92,15 +92,15 @@ int ft_strtololol(char *num)
 	}
 	if (n < INT_MIN || n > INT_MAX)
 		ft_nerror(n);
-	return n;
+	return ((int)n);
 }
 
 int *split(char *s)
 {
-	size_t len;
-	int **mat;
-	int i;
-	int j;
+	size_t	len;
+	int		**mat;
+	int		i;
+	int		j;
 	len = findWords(s);
 	mat = (int **) malloc((len + 1) * sizeof(int *));
 	i = 0;

@@ -1,0 +1,52 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// Simple split function: splits by delimiter and returns NULL-terminated array
+char **split(const char *str, char delim) {
+	int count = 1;
+	for (const char *s = str; *s; s++)
+		if (*s == delim) count++;
+
+	char **result = malloc((count + 1) * sizeof(char *));
+	if (!result) return NULL;
+
+	int idx = 0;
+	const char *start = str;
+	for (const char *s = str; ; s++) {
+		if (*s == delim || *s == '\0') {
+			size_t len = s - start;
+			result[idx] = malloc(len + 1);
+			if (result[idx]) {
+				strncpy(result[idx], start, len);
+				result[idx][len] = '\0';
+			}
+			idx++;
+			if (*s == '\0') break;
+			start = s + 1;
+		}
+	}
+	result[idx] = NULL;
+	return result;
+}
+
+void free_split(char **arr) {
+	if (!arr) return;
+	for (int i = 0; arr[i]; i++)
+		free(arr[i]);
+	free(arr);
+}
+
+int main(void) {
+	char str[] = "hello,world,this,is,a,test";
+	char delim = ',';
+	char **tokens = split(str, delim);
+
+	printf("Split result:\n");
+	for (int i = 0; tokens && tokens[i]; i++) {
+		printf("[%s]\n", tokens[i]);
+	}
+
+	free_split(tokens);
+	return 0;
+}
