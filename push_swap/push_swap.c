@@ -1,71 +1,52 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   push_swap.c                                        :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: ggaritta <ggaritta@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/02/18 12:13:11 by ggaritta          #+#    #+#             */
-/*   Updated: 2026/03/12 11:09:23 by ggaritta         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "push_swap.h"
-void precontrols()
+
+void	precontrols(void)
 {
-	
-}
-void push_swap(t_stacks s)
-{
-	
 }
 
-int main(int ac, char **av)
+static void	run_chunk_phase(t_stacks *s)
 {
-	t_stacks s;
-	int i;
-	
-	i = 1;
-	if (ac < 2)
-		return (error(0));
-	if (ac == 2 && ft_pastramiOrSalami(av[i]))
-		s.a.head = ft_split(av[1]);
-		if (ft_no_duplos(s.a.head))
-			return (ft_duploerror(2));
-	else if (ac > 2)
-	{
-		while (i < ac)
-			if (ft_pastramiOrSalami(av[i]))
-				s.a.head = ft_split(av[i++]);
-		if (ft_no_duplos(s.a.head))
-			return (ft_duploerror(2));
-	}
-	ft_howMuchisPastrami(s.a);
-	push_swap(s);
-	decappler(s.a);
-	return 0;
+	(void)s;
 }
-// int main(int ac, char **av)
-// {
-// 	int *vals;
-// 	int i;
-// 	i = 1;
-// 	if (ac < 2)
-// 		return (error(0));
-// 	if (ac == 2 && ft_pastramiOrSalami(av[i]))
-// 		vals = ft_split(av[1]);
-// 		if (ft_no_duplos(vals))
-// 			return (ft_duploerror(2));
-// 	else if (ac >2)
-// 	{
-// 		while (i < ac)
-// 			if (ft_pastramiOrSalami(av[i]))
-// 				vals[i-1] = ft_split(av[i++]);
-// 		if (ft_no_duplos(vals))
-// 			return (ft_duploerror(2));
-// 	}
-	
-// 	push_swap(vals);
-// 	free(vals);
-// 	return 0;
-// }
+
+static void	run_greedy_phase(t_stacks *s)
+{
+	(void)s;
+}
+
+void	push_swap(t_stacks *s)
+{
+	if (!s)
+		return ;
+	lis_phase(&s->a);
+	if (check_if_sortdimamt(s->a))
+		return ;
+	if (s->a.size <= 5)
+	{
+		lesortdimamt(s);
+		return ;
+	}
+	run_chunk_phase(s);
+	run_greedy_phase(s);
+}
+
+int	main(int ac, char **av)
+{
+	t_stacks	*s;
+
+	if (ac < 2)
+		return (0);
+	s = create_stacks();
+	if (!s)
+		return (1);
+	if (!alltheknots(s, ac, av))
+		return (exit_error(s));
+	if (s->a.size < 2)
+	{
+		decappler_two_point_o(s);
+		return (0);
+	}
+	push_swap(s);
+	decappler_two_point_o(s);
+	return (0);
+}

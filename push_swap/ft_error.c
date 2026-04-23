@@ -20,22 +20,28 @@ of duplicates*/
 
 void ft_errors(long num, int e)
 {
-	//incomplete
-	if(e == 0)
-		ft_nerror(num);
-	else if (1)
-	{}
-	else if (2)
-		ft_duploerror(num);
+	(void)num;
+	(void)e;
+	write(2, "Error\n", 6);
 }
-void ft_duploerror(long)
+
+void ft_duploerror(long n)
 {
-	printf("Error\n This number was already read: %ld\n");
+	(void)n;
+	write(2, "Error\n", 6);
 }
 
 void ft_nerror(long n)
 {
-	printf("Error\n This is not an int: %ld\n");
+	(void)n;
+	write(2, "Error\n", 6);
+}
+
+int	exit_error(t_stacks *s)
+{
+	ft_errors(0, 0);
+	decappler_two_point_o(s);
+	return (1);
 }
 // void exit_error(void)
 // {

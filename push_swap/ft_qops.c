@@ -6,113 +6,114 @@
 /*   By: ggaritta <ggaritta@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/20 14:50:17 by ggaritta          #+#    #+#             */
-/*   Updated: 2026/03/13 19:40:58 by ggaritta         ###   ########.fr       */
+/*   Updated: 2026/04/23 17:09:48 by ggaritta         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "push_swap.c"
+#include "push_swap.h"
 
 // t_queue createQ(void)
 // {
 // 	return ((t_queue){NULL, NULL, 0});
 // }
-t_stacks create_stacks(void)
+t_stacks *create_stacks(void)
 {
-	t_stacks s;
-	s.a = (t_queue){NULL, NULL, 0};
-	s.b = (t_queue){NULL, NULL, 0};
+	t_stacks *s;
+
+	s = malloc(sizeof(*s));
+	if (!s)
+		return (NULL);
+	s->a = (t_queue){NULL, NULL, NULL, 0};
+	s->b = (t_queue){NULL, NULL, NULL, 0};
 	return (s);
 }
-// t_stacks	ft_createStacks()
-// {
-// 	t_stacks s;
-// 	s.a = createQ();
-// 	if (!s.a)
-// 		ft_callmeanerror(51);
-// 	s.b = createQ();
-// 	if (!s.b)
-// 	{
-// 		free(s.a);
-// 		ft_callmeanerror(52);
-// 	}
-// 	return (s);
-// }
-// t_stacks ft_createStacks()
-// {
-// 	return ((t_stacks){createQ(), createQ()});
-// }
-// t_queue	*createQ()
-// {
-// 	t_queue *q;
-// 	q = malloc(sizeof(t_queue));
-// 	if (!q)
-// 		return (NULL);
-// 	q->head = NULL;
-// 	q->tail = NULL;
-// 	q->size = 0;
-// 	return (q);
-// }
 
-// bool qie(t_queue q)
-// {
-// 	return q.size == 0;
-// }
-
-void knot_me(t_queue q, int val)
+t_node *knot_me(int val, int id)
 {
 	/*creare il nodo, verificare, */
-	t_node *newNod = {0};
+	t_node *newNod;
 	newNod = malloc(sizeof(t_node));
 	if (!newNod)
-		return;
+		return (NULL);
 	newNod->value = val;
-	newNod->id = -1;
+	newNod->sval = -1;
+	newNod->valis = 1;
+	newNod->idx = id;
+	newNod->idsubseq = NULL;
+	newNod->prev = NULL;
 	newNod->next = NULL;
-	if (q.head == NULL)
+	/*
+	t_node *n = knot_me(val, i); to use in the actual code or here to complete creation
+	if (newNod)
+	k2q(q, newNod);
+	*/
+	return (newNod);
+}
+
+void k2q(t_queue *q, t_node *newNod)
+{
+	if (q->head == NULL)
 	{
-		q.head = newNod;
-		q.tail = newNod;
+		q->head = newNod;
+		q->tail = newNod;
 	}
 	else
 	{
-		q.tail->next = newNod;
-		q.tail = newNod;
+		newNod->prev = q->tail;
+		q->tail->next = newNod;
+		q->tail = newNod;
 	}
-	q.size++;
+	// if (q->head == newNod)
+	// 	newNod->prev = NULL;
+	// else
+	// 	newNod->prev = q->tail;
+	q->size++;
 }
 
-void decappler_two_point_o(t_stacks s)
+static void	clear_queue(t_queue *q)
 {
-	t_node *knot;
-	t_node *future_knot;
+	t_node	*knot;
+	t_node	*future_knot;
 
-	knot = s.a.head;
+	knot = q->head;
 	while (knot)
 	{
-		if (!knot || !knot->next)
-			return;
 		future_knot = knot->next;
 		free(knot);
 		knot = future_knot;
 	}
-	knot = NULL;
+	q->head = NULL;
+	q->tail = NULL;
+	q->lis = NULL;
+	q->size = 0;
 }
 
-int decappler(t_queue q)
+void decappler_two_point_o(t_stacks *s)
 {
-	int oVal;
-	t_node *oNod;
-	oVal = 0;
-	if (q.head == NULL)
-		return false;
-	oNod = q.head;
-	oVal = oNod->value;
-	q.head = q.head->next;
-	free(oNod);
-	q.size--;
-	return (oVal);
+	if (!s)
+		return ;
+	clear_queue(&s->a);
+	clear_queue(&s->b);
+	free(s);
 }
-/*alla fine della liberazione bis
 
-- cos'e' il max costo totale???
-*/
+void	knot_of_interest(t_queue q)
+{
+	int		i;
+	t_node	*k;
+
+	k = q.head;
+	i = 0;
+	while (k)
+	{
+		k->idx = i;
+		i++;
+		k = k->next;
+	}
+	//filled all the nodes of the stack. idx is necessary for lis layer;
+}
+
+bool qie(t_queue q)
+{
+	return (q.size == 0);
+}

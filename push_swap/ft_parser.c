@@ -6,47 +6,53 @@
 /*   By: ggaritta <ggaritta@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/26 19:31:27 by ggaritta          #+#    #+#             */
-/*   Updated: 2026/03/13 19:46:51 by ggaritta         ###   ########.fr       */
+/*   Updated: 2026/04/23 20:35:12 by ggaritta         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "push_swap.h"
+
 bool check_if_sortdimamt(t_queue q)
 {
-	int min;
-	min = INT_MIN;
-	while(q.head->next)
+	t_node *k;
+
+	if (!q.head || !q.head->next)
+		return (true);
+	k = q.head;
+	while (k->next)
 	{
-		//qwertyuiop
+		if (k->sval < k->next->sval)
+			k = k->next;
+		else
+			return (false);
 	}
+	if (k == q.tail)
+		return (true);
+	return (false);
 }
 
-bool ft_pastramiOrSalami(char *str)
-{
-	while(*str)
-		if(!isN(str) || !isWS(str))
-			return false;
-		str++;
-}
 bool isN(char c)
 {
 	return ((c >= 48 && c <= 57));
 }
 
-bool ft_no_duplos(int *vals)
+bool ft_pastramiOrSalami(char *str)
 {
-	int j,i = 0;
-	//check if number appeared in list
-	while (vals[i]!= NULL)
+	int	seen_digit;
+
+	seen_digit = 0;
+	while (*str)
 	{
-		j = 1;
-		while (vals[j])
-			if(vals[i] == vals[j])
-				return (false);
+		if (isN(*str))
+			seen_digit = 1;
+		else if (!isWS(*str) && *str != '+' && *str != '-')
+			return (seen_digit);
+		str++;
 	}
-	return (true);
+	return (seen_digit);
 }
 
+//findmin in queue
 t_node *ft_schivoPeterMinum(t_queue q)
 {
 	int min;
@@ -58,7 +64,7 @@ t_node *ft_schivoPeterMinum(t_queue q)
 	k = q.head;
 	while (k != NULL)
 	{
-		if(k->id == INT_MIN && k->value < min)
+		if(k->sval == -1 && k->value < min)
 		{
 			min = k->value;
 			l_k = k;
@@ -68,28 +74,116 @@ t_node *ft_schivoPeterMinum(t_queue q)
 	return (l_k);
 }
 
-/* assign costs/ids: set everynode as un-indexed so to -1. after, you need to start indexing, 
-searching from those that are still not indexed, searching for min value you start from max*/
+/* assign costs/ids: set everynode as un-indexed so to -1. after, you need to start indexing,
+ searching from those that are still not indexed, searching for min value you start from max */
 void ft_howMuchisPastrami(t_queue q)
 {
-	int id;
+	int sval;
 	t_node *little_knot;
 	t_node *node;
 
 	node = q.head;
-	while (node->id != INT_MIN)
+	while (node)
 	{
-		node->id = INT_MIN;
+		node->sval = -1;
 		node = node->next;
 	}
-	id = 0;
-	while(id < q.size)
+	sval = 0;
+	while(sval < q.size)
 	{
 		little_knot = ft_schivoPeterMinum(q);
 		if (little_knot)
-			little_knot->id = id;
-		id++;
+			little_knot->sval = sval;
+		sval++;
 	}
 }
 
+t_stacks *assignidxs(t_stacks *s)//deprecated never used
+{
+	t_node *k;
+	int i;
+
+	i = 0;
+	k = s->a.head;
+	while (k)
+	{
+		k->idx = i++;
+		k = k->next;
+	}
+	k = s->b.head;
+	i = 0;
+	while (k)
+	{
+		k->idx = i++;
+		k = k->next;
+	}
+	return (s);
+}
+
+static bool	duped(t_queue q, int v)
+{
+	t_node	*k;
+
+	k = q.head;
+	while (k)
+	{
+		if (k->value == v)
+			return (true);
+		k = k->next;
+	}
+	return (false);
+}
+
+static int	append_parsed(t_stacks *s, int v, int *idx)
+{
+	t_node	*k;
+
+	if (duped(s->a, v))
+		return (1);
+	k = knot_me(v, *idx);
+	if (!k)
+		return (1);
+	k2q(&s->a, k);
+	(*idx)++;
+	return (0);
+}
+
+static int	parse_one_arg(t_stacks *s, char *arg, int *idx)
+{
+	int	v;
+
+	while (*arg)
+	{
+		while (*arg && isWS(*arg))
+			arg++;
+		if (!*arg)
+			break ;
+		if (ft_strtolol(&arg, &v))
+			return (1);
+		if (append_parsed(s, v, idx))
+			return (1);
+	}
+	return (0);
+}
+
+//func about the whole filling the stack from inputs
+t_queue *alltheknots(t_stacks *s, int argc, char **argv)
+{
+	int	i;
+	int	idx;
+
+	if (!s)
+		return (NULL);
+	i = 1;
+	idx = 0;
+	while (i < argc)
+	{
+		if (parse_one_arg(s, argv[i], &idx))
+			return (NULL);
+		i++;
+	}
+	if (s->a.size == 0)
+		return (NULL);
+	return (&s->a);
+}
 

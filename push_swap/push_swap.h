@@ -6,7 +6,7 @@
 /*   By: ggaritta <ggaritta@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/20 13:45:06 by ggaritta          #+#    #+#             */
-/*   Updated: 2026/03/12 17:28:44 by ggaritta         ###   ########.fr       */
+/*   Updated: 2026/04/23 21:29:11 by ggaritta         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,69 +15,211 @@
 
 # include <stdbool.h>
 # include <stdio.h>
+# include <unistd.h>
 # include <stdlib.h>
 # include <limits.h>
 
 typedef struct s_node	t_node;
+typedef struct s_coord	t_coord;
+typedef struct s_queue	t_queue;
+typedef enum e_strat	t_strat;
+typedef void (*t_op)(t_queue *);
 
 struct s_node
 {
-	int		id;
+	int		idx;//pos? anche se iniziale, ti aggiorno ogni volta a questo punto
+	t_node	*idsubseq;
+	int		valis;
+	int		sval;
 	int		value;
 	t_node	*next;
+	t_node	*prev;
 };
 
-typedef struct s_queue
+struct s_queue
 {
 	t_node	*head;
 	t_node	*tail;
+	t_node	*lis;
 	int		size;
-}	t_queue;
+};
 
 typedef struct s_stacks
 {
-	t_queue	a;
+	t_queue	a;//controllare se serve mandare come ptr
 	t_queue	b;
 }	t_stacks;
 
-//qops.c
-void	ft_createStacks();
-//void	push_swap(t_queue *nums);
-int		decappler(t_queue q);
-void	knot_me(t_queue q, int val);
-bool	qie(t_queue *q);
-t_queue	*createQ();
-//moves.c
-void	sa(t_queue q);
-void	sb(t_queue q);
-void	ss(t_queue a, t_queue b);
-void	push(t_queue from, t_queue to);
-void	pa(t_queue b, t_queue a);
-void	pb(t_queue a, t_queue b);
-void	scroll_up(t_queue q);
-t_node	*get_alas(t_node *e);
-void	scroll_down(t_queue q);
-void	ra(t_queue a);
-void	rb(t_queue b);
-void	rr(t_stacks s);
-void	rra(t_queue a);
-void	rrb(t_queue b);
-void	rrr(t_stacks s);
+typedef struct s_choice //never used sadge
+{
+	int		strategy;
+	t_node	*target;
+} t_choice;
 
-//ftsplit.c
-bool isWS(char c);
-int findWords(char *s);
-int ft_strtololol(char *num);
-int *split(char *s);
+typedef enum e_strat
+{
+	RR,
+	RRR,
+	RA_RRB,
+	RRA_RB
+} t_strat;
 
-//parser.c
-bool	check_if_sortdimamt(t_queue q);
-bool	ft_pastramiOrSalami(char *str);
-bool	isN(char c);
-bool	ft_no_duplos(int *vals)
+struct s_coord
+{
+	t_node	*ak;
+	t_node	*bk;
+	// char	eorivl;//-1 int, 1 ext e i
+	int		ac;
+	char	adir;// 0 or 1 n p
+	int		bc;
+	char	bdir;// 0 or 1 n p
+	int		totc;
+	t_strat	strat;
+};
 
+/* push_swap.c */
+void		precontrols(void);
+void		push_swap(t_stacks *s);
 
+/* ft_qops.c */
+t_stacks	*create_stacks(void);
+bool		qie(t_queue q);
+t_node		*knot_me(int val, int id);
+void		k2q(t_queue *q, t_node *newNod);
+void		knot_of_interest(t_queue q);
+void		decappler_two_point_o(t_stacks *s);
 
+/* ft_moves.c */
+void		swp(t_queue *q);
+void		sa(t_queue *q);
+void		sb(t_queue *q);
+void		ss(t_stacks *s);
+void		push(t_queue *from, t_queue *to);
+void		pa(t_stacks *s);
+void		pb(t_stacks *s);
+void		scroll_up(t_queue *q);
+void		ra(t_queue *a);
+void		rb(t_queue *b);
+void		rr(t_stacks *s);
+void		scroll_down(t_queue *q);
+void		rra(t_queue *a);
+void		rrb(t_queue *b);
+void		rrr(t_stacks *s);
+t_node		*get_alas(t_node *e);
+void		reachprevbot(t_queue *q, t_node *reachme);
+void		reachnextbot(t_queue *q, t_node *reachme);
+void		reachprevtop(t_queue *q, t_node *reachme);
+void		reachnexttop(t_queue *q, t_node *reachme);
+
+/* ft_split.c */
+bool		isWS(char c);
+int		findWords(char *s);
+int		ft_strtolol(char **num, int *out);
+int		*split(char *s);
+
+/* ft_parser.c */
+bool		check_if_sortdimamt(t_queue q);
+bool		isN(char c);
+bool		ft_pastramiOrSalami(char *str);
+bool		ft_no_duplos(int *vals);
+t_node		*ft_schivoPeterMinum(t_queue q);
+void		ft_howMuchisPastrami(t_queue q);
+t_stacks	*assignidxs(t_stacks *s);
+t_queue		*alltheknots(t_stacks *s, int argc, char **argv);
+
+/* ft_error.c */
+void		ft_errors(long num, int e);
+void		ft_duploerror(long num);
+void		ft_nerror(long n);
+int		exit_error(t_stacks *s);
+
+/* ft_libft.c */
+void		*ft_helloitsmecalloc(size_t n, size_t w, char c);
+
+/* ft_lis.c */
+t_node		*fat_lisa(t_queue q);
+void		theTamingoftheShrewLisa(t_queue *q);
+bool		isqmadeonlyoflisskeletonelements(t_queue q);
+t_node		*whereislisa(t_queue q);
+int		runthrough(t_node *n, t_queue q);
+int		toomuchLisa(t_node *node);
+void		findValReset(t_queue q, int nmb);
+int		fiv(t_node *n, int id);
+t_node		*lizCheney(t_queue *q);
+bool		am_i_into_Lisa(t_node *k, t_node *lk);
+int		LookIn_my_gapeS(t_node *k);
+void		lisEandataVia(t_queue *q);
+void		lis_phase(t_queue *q);
+
+/* ft_sorting_utilities.c */
+int		ft_id_pippino(t_queue q);
+t_node		*pikmin(t_queue q);
+t_node		*pokmon(t_queue q);
+
+/* ft_sortini.c */
+void		sort_too(t_stacks *s);
+void		sort_thee(t_stacks *s);
+void		sort_flour(t_stacks *s);
+void		sort_faiv(t_stacks *s);
+void		lesortdimamt(t_stacks *s);
+
+/* ft_chonkers.c */
+t_node		*nrnktp(t_queue q, int cs, int ce);
+t_node		*prnktp(t_queue q, int cs, int ce);
+void		inversa_lafinestra_intelligente(t_stacks *s);
+
+/* ft_chonkers_utils.c */
+int		chunk_size(int n);
+int		ft_sqrt(int n);
+int		ch_malcolm_in_the_middle(int start, int end);
+bool		ceiling(t_stacks s, int *chs, int *che);
+int		nrotcost(t_queue q, t_node *n);
+int		protcost(t_queue q, t_node *p);
+void		findbestrottenknot(t_stacks *s, int *chus, int *chue);
+void		save_me_nrotmin(t_stacks *s, t_node *p, t_node *n, int *cs, int *ce);
+void		save_me_nroteq(t_stacks *s, t_node *p, t_node *n, int *cs, int *ce);
+void		push_me_knot(t_stacks *s, int *chus, int *chue);
+void		predict_me_Knot(t_stacks *s, int *cs, int *ce);
+void		save_me_rot(t_stacks *s, t_node *p, t_node *n, int *cs, int *ce);
+t_node		*fifnk(t_stacks s, int i);
+t_node		*fifpk(t_stacks s, int i);
+int		nextrotmormid(t_queue q, int cs, int ce);
+int		nextrotlessmid(t_queue q, int cs, int ce);
+int		prevrotmormid(t_queue q, int cs, int ce);
+int		prevrotlessmid(t_queue q, int cs, int ce);
+t_node		*nrotk(t_queue *q, t_node *reach_me);
+t_node		*protk(t_queue *q, t_node *reach_me);
+void		findrotation(t_queue q, t_node *k);
+
+/* ft_griddy.c */
+void		mc_griddy(t_stacks *s);
+void		scrooge_mcrot(t_stacks *s, t_coord *xy);
+
+/* ft_griddy_utils.c */
+void		calldoublespin(t_stacks *s, t_node *ak, t_node *bk, int rot);
+int		maxvalo(int n, int m);
+int		minvalo(int i, int j);
+int		*remaining_rich_by_being_the_most_miserable(t_stacks *s, t_coord *xy);
+void		blind_date(t_stacks *s, t_coord *xy);
+void		tinder(t_queue a, t_coord *zd);
+void		reachtop(t_stacks *s, t_coord *xy);
+void		concord(t_stacks *s, t_coord *xy);
+void		remainingroots(t_stacks *s, t_coord *xy);
+void		setmeup(t_stacks *s, t_coord *xy);
+void		final_sortami(t_stacks *s);
+
+/* ft_griddy_save_moves.c */
+void		amajprevint(t_stacks *s, t_coord *xy);
+void		amajnextint(t_stacks *s, t_coord *xy);
+void		amajprevext(t_stacks *s, t_coord *xy);
+void		amajnextext(t_stacks *s, t_coord *xy);
+void		aminprevint(t_stacks *s, t_coord *xy);
+void		aminnextint(t_stacks *s, t_coord *xy);
+void		aminprevext(t_stacks *s, t_coord *xy);
+void		aminnextext(t_stacks *s, t_coord *xy);
+
+/* ft_costs.c */
+void		rollatuttopecosto(t_queue *a);
 
 #endif
 // ./pushwap numeri | ./checker  stessa lista numeri

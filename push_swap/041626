@@ -1,0 +1,144 @@
+push_swap - implementation checklist (04/16/26)
+
+1) Stabilize mandatory build scope first
+- In Makefile, keep only foundational mandatory files for now:
+  push_swap.c
+  ft_qops.c
+  ft_moves.c
+  ft_parser.c
+  ft_split.c
+  ft_error.c
+  ft_sorting_utilities.c
+  ft_sortini.c
+  ft_libft.c
+- Temporarily exclude unfinished strategy files:
+  ft_griddy*.c, ft_chonkers*.c, ft_costs.c, ft_chunk_restart.c, LISmastve.c
+- Goal: make compile errors focused and actionable.
+
+2) Fix queue foundation and includes
+- In ft_qops.c:
+  - include push_swap.h (not push_swap.c)
+  - fix create_stacks: allocate memory before writing into s->a / s->b
+- Keep one reliable append path:
+  - knot_me(value, idx) creates node
+  - k2q(queue, node) appends node and updates size/head/tail correctly
+- Ensure free path is correct (free all nodes and reset pointers).
+
+3) Unify input model (remove mixed int* vs node* flow)
+- Decide: stacks are node queues (recommended).
+- Main should:
+  - parse argv tokens
+  - convert to int with range checks
+  - duplicate check
+  - create knot + append to s.a
+- Remove calls that mismatch model:
+  - do not assign split() output directly to s.a.head
+  - do not pass s.a.head to ft_no_duplos(int *vals)
+
+4) Parser corrections
+- ft_pastramiOrSalami:
+  - use character checks on *str, not str pointer
+  - return true/false on all paths
+- ft_no_duplos:
+  - current loop logic is broken; use proper i/j progression
+  - avoid NULL comparisons for integer arrays unless sentinel design is intentional and valid
+- alltheknots:
+  - either implement fully or remove from build until needed
+
+5) Split / conversion corrections
+- findWords: initialize counters; avoid char vs NULL pointer comparisons
+- split return type and internal allocations must match signature
+- If split returns int*, parse accordingly; if token matrix needed, use char** and convert later
+
+6) Moves layer hardening
+- include unistd.h for write
+- ensure helpers are declared before use or prototyped in header
+- add null/size guards in move primitives where needed
+
+7) Error API cleanup
+- fix ft_error signatures and printf formatting args
+- print Error\n exactly for project error cases
+- return/exit strategy must be consistent in main and parser paths
+
+8) Small sort correctness pass (2..5)
+- fix pointer syntax in ft_sortini.c (s->a vs s.a)
+- fix function argument types (pass queue pointers where required)
+- ensure helper return types are used correctly (node* vs int)
+
+9) Integrate larger algorithm only after mandatory baseline works
+- Reintroduce LIS/chunk/griddy files incrementally
+- Compile after each reintegration to isolate regressions
+
+10) Bonus checker requirements
+- Add checker source file(s)
+- checker reads ops from stdin and applies them
+- accepted ops: sa sb ss pa pb ra rb rr rra rrb rrr
+- final output: OK if A sorted and B empty, else KO
+- invalid op/input => Error\n
+11) Makefile bonus as required
+- bonus target should fail if checker sources are missing
+- build checker executable explicitly when sources exist
+
+Immediate next action
+- Step 1 now: reduce mandatory SRCS in Makefile to the stable foundation list.
+
+Progress update (completed)
+- Makefile mandatory scope reduced to core files.
+- Core mandatory target now compiles and links into push_swap.
+- push_swap main now parses argv into queue nodes via knot_me + k2q.
+- Duplicate and numeric-range checks are handled during input load.
+- decappler_two_point_o is wired from main for cleanup.
+- Queue/moves safety guards were added to avoid null dereferences.
+- Minimal small-sort path is active for size <= 5.
+- Smoke test: ./push_swap 2 1 outputs "sa".
+
+Next steps (in order)
+1) Validate sorting behavior for 3/4/5 inputs with checker.
+2) Fix remaining logic bugs in parser helpers that are still placeholders.
+3) Re-introduce LIS/chunk/griddy files one block at a time.
+4) Implement checker bonus and make bonus target hard-required.
+
+Why these corrections are better (compared to the old code)
+
+1) Queue-node input load in main (instead of assigning split output to head)
+- Better because the project data model is node-based stacks (t_queue/t_node).
+- The old approach mixed int array parsing and node queue usage, causing type errors and hidden logic bugs.
+- New flow guarantees every value becomes exactly one node via knot_me + k2q.
+
+2) Duplicate check during insertion (append_value)
+- Better because duplicates are rejected immediately at the source.
+- The old late-stage duplicate checks depended on int-array sentinels and mismatched pointer types.
+- Immediate rejection also simplifies error handling and avoids extra passes.
+
+3) create_stacks allocation fix
+- Better because writing to an uninitialized pointer is undefined behavior (crash risk).
+- The corrected version allocates before assignment and returns NULL on failure.
+
+4) decappler_two_point_o cleanup reset
+- Better because freeing nodes without resetting head/tail/size leaves stale pointers.
+- Resetting queue metadata prevents use-after-free style bugs in later code paths.
+
+5) Move-operation guards (swp/push/scroll_down)
+- Better because stack ops can now safely no-op on tiny/empty stacks.
+- The old code could dereference NULL or invalid next/prev pointers in edge cases.
+- This is critical for checker robustness too, where invalid op sequences must not segfault.
+
+6) Correct char checks in split/parser (s[i] not NULL pointer compares)
+- Better because char-vs-NULL comparisons are type bugs in C.
+- Using char-aware checks removes warnings and reflects actual string semantics.
+
+7) ft_error signature/format fixes
+- Better because printf format placeholders now match passed arguments.
+- The old version could print garbage or crash and failed strict compilation.
+
+8) sortini pointer/API fixes
+- Better because passing queue pointers vs values is now consistent with function signatures.
+- The old code mixed s.a and s->a usage and called functions with wrong argument types.
+
+9) Single rank-assignment call location
+- Better because repeated ft_howMuchisPastrami calls are redundant and can hide ordering assumptions.
+- Keeping ranking in one place (push_swap path) makes behavior predictable.
+
+10) Mandatory-only build scope first
+- Better because it isolates foundational bugs before enabling advanced modules.
+- Reintroducing griddy/chunk/LIS later makes debugging incremental instead of combinatorial.
